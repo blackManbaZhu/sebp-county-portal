@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-dialog title="添加音频文件" :visible.sync="addMedia" :show-close="false" :close-on-click-modal="false">
+        <el-dialog title="添加视频文件" :visible.sync="addMedia" :show-close="false" :close-on-click-modal="false">
             <!-- <el-form :model="form"> -->
                 <el-upload
                     ref="upload"

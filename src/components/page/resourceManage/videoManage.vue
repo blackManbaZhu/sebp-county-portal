@@ -46,7 +46,7 @@
                         <template slot-scope="scope">
                             <el-button type="text"><i class="fa fa-play-circle"></i></el-button>
                             <el-button type="text" @click="editMedia(scope.$index, scope.row)"><i class="fa fa-edit"></i></el-button>
-                            <el-button type="text"><i class="fa fa-trash-o"></i></el-button>
+                            <el-button type="text" @click="deleteMedia(scope.$index, scope.row)"><i class="fa fa-trash-o"></i></el-button>
                         </template>
                         </el-table-column>
                     </el-table>
@@ -62,7 +62,7 @@
                 </div>
                 <div class="bottom">
                     <span class="selectSpan">已选择<span>{{multipleSelection.length}}</span>个视频</span>
-                    <el-button type="primary" plain class="btn"><i class="fa fa-trash-o"></i> 删除选中视频</el-button>
+                    <el-button type="primary" plain class="btn" @click="deleteSelect"><i class="fa fa-trash-o"></i> 删除选中视频</el-button>
                 </div>
             </el-main>
         </el-container>
@@ -141,7 +141,30 @@
             },
             closeAdd() {
                 this.showAdd = false;
-            }
+            },
+            deleteMedia(index, row) { //删除单个
+                 this.$confirm('确认删除该视频资源吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
+            },
+            deleteSelect() {
+                if(!this.multipleSelection.length){
+                    this.$message({type:'error',duration:1200,message:'当前没有选择任何视频资源！'});
+                    return false;
+                }
+                this.$confirm('确认删除选中的视频资源吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
+
+            },
         }
     }
 </script>

@@ -240,6 +240,7 @@
 </template>
 
 <script>
+    import { verify } from "../../../../api/api.js";
     let options1 = [
         { value:'循环' ,index:'0' },
         { value:'不循环' ,index:'1' }
@@ -269,7 +270,7 @@
                 form1:{
                     name:'',
                     textarea:'',
-                    selectValue:'',
+                    selectValue:'循环',
                     dateValue:'',
                     timeValue1:'',
                     timeValue2:''
@@ -318,6 +319,11 @@
             next() {
                 this.$refs['form1'].validate((valid) =>{
                     if(valid){
+                        let name = verify.mediaVerify(this.form1.name);
+                        if(!name){
+                            this.$message({type:'error',duration:1200,message:'名称格式不正确！'});
+                            return false;
+                        }
                         this.active = 1;
                     }else{
                         return false;

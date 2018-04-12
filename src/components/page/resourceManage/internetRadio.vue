@@ -41,7 +41,7 @@
                         <template slot-scope="scope">
                             <el-button type="text" @click="play(scope.$index, scope.row)"><i class="fa fa-play-circle"></i></el-button>
                             <el-button type="text" @click="handleClick(scope.$index, scope.row)"><i class="fa fa-edit"></i></el-button>
-                            <el-button type="text"><i class="fa fa-trash-o"></i></el-button>
+                            <el-button type="text" @click="deleteRadio(scope.$index, scope.row)"><i class="fa fa-trash-o"></i></el-button>
                         </template>
                         </el-table-column>
                     </el-table>
@@ -57,7 +57,7 @@
                 </div>
                 <div class="bottom">
                     <span class="selectSpan">已选择<span>{{multipleSelection.length}}</span>个电台</span>
-                    <el-button type="primary" plain class="btn"><i class="fa fa-trash-o"></i> 删除选中电台</el-button>
+                    <el-button type="primary" plain class="btn" @click="deleteSelect"><i class="fa fa-trash-o"></i> 删除选中电台</el-button>
                 </div>
             </el-main>
         </el-container>
@@ -162,6 +162,28 @@
                 this.dialogEditVisible = true;
                 this.form2.name    = row.name;
                 this.form2.address = row.address;
+            },
+            deleteRadio(index,row) { //删除单个电台
+                this.$confirm('确认删除该电台资源吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
+            },
+            deleteSelect() {
+                if(!this.multipleSelection.length) {
+                    this.$message({type:'error',duration:1200,message:'当前没有选择任何网络电台资源！'});
+                    return false;
+                }
+                this.$confirm('确认删除选中的网络电台资源吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
             },
             addRadio() {
                 this.dialogFormVisible = true;

@@ -86,7 +86,7 @@
                         >
                         <template slot-scope="scope">
                             <el-button type="text" @click="play(scope.$index, scope.row)"><i class="fa fa-play-circle"></i></el-button>
-                            <el-button type="text"><i class="fa fa-trash-o"></i></el-button>
+                            <el-button type="text" @click="deleteTime(scope.$index, scope.row)"><i class="fa fa-trash-o"></i></el-button>
                         </template>
                         </el-table-column>
                     </el-table>
@@ -102,7 +102,7 @@
                 </div>
                 <div class="bottom">
                     <span class="selectSpan">已选择<span>{{multipleSelection.length}}</span>个任务</span>
-                    <el-button type="primary" plain class="btn"><i class="fa fa-trash-o"></i> 删除选中任务</el-button>
+                    <el-button type="primary" plain class="btn" @click="deleteSelect()"><i class="fa fa-trash-o"></i> 删除选中任务</el-button>
                 </div>
             </el-main>
         </el-container>
@@ -230,6 +230,28 @@
             handleClick(index,row) {
             
             },
+            deleteTime(index ,row) { //单个资源删除
+                this.$confirm('确认删除该定时任务吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
+            },
+            deleteSelect() { //删除选中文件
+                if(!this.multipleSelection.length){
+                    this.$message({type:'error',duration:1200,message:'当前没有选择任何定时任务资源！'});
+                    return false;
+                }
+                this.$confirm('确认删除选中的定时任务吗?', '提示', {
+					type: 'warning'
+                }).then(() => {
+
+                }).catch(() => {
+                    console.log("出错!!")
+                });
+            },
             addTasks() {
                 this.showAdd = true;
             },
@@ -238,25 +260,35 @@
             },
             play(index,row) {
                 this.playMedia = true;
-                if(this.playMedia){
+                let T;
+                T = setTimeout(() => {
                     var setConfig = {
                         song : [
+                            // {
+                            //     title : 'china',
+                            //     src : 'http://jq22com.qiniudn.com/jq22m1.mp3',
+                            //     cover : 'images/001.png'
+                            // },
                             {
                                 title : '如风过境',
                                 src : 'http://jq22.qiniudn.com/2_01.mp3',
                                 cover : 'images/002.png'
                             },
+                            // {
+                            //     title:'Goldfrapp',
+                            //     src:'http://www.jq22.com/demo/jquery-mis-150323220305/Media/Transformers2.mp3'
+                            // }
                         ],
                         error : function(meg){
                             console.log(meg);
+                            // alert("播放错误！请重新播放")
                         }
                     };
                     var audioFn    = audioPlay(setConfig);
                     if(audioFn){
-                        //开始加载音频,true为播放,false不播放
                         audioFn.loadFile(1);
                     }
-                }
+                }, 0);
             },
             closePlay(){ //关闭试听
                 var audioFn    = audioPlay({});
