@@ -6,22 +6,24 @@
                 <el-step title="选择任务类型"></el-step>
             </el-steps>
             <div class="step1" v-show="active == 0">
-                <el-form ref="form1" :model="form1" :rules="rules1">
+                <el-form ref="form1" :model="form1" :rules="rules">
                     <div class="l">
                         <el-form-item label="任务名称" prop="name">
-                            <el-input v-model="form1.name"></el-input>
+                            <el-input :minlength="1" :maxlength="30" v-model="form1.name"></el-input>
                         </el-form-item>
-                        <el-form-item label="任务描述">
+                        <el-form-item label="任务描述" class="textarea">
                             <el-input
                             class="area"
                             type="textarea"
                             :rows="7"
-                            :maxlength="4000"
+                            :maxlength="500"
                             :minlength="1"
                             resize="none"
-                            placeholder="请输入内容"
-                            v-model="form1.textarea">
+                            placeholder="请输入描述（限制500字）"
+                            v-model="form1.textarea"
+                            @input="inputText()">
                             </el-input>
+                            <span class="spanInt">剩余（{{placeholde}}字）</span>
                         </el-form-item>
                     </div>
                     <div class="r">
@@ -42,7 +44,8 @@
                                 range-separator="-"
                                 start-placeholder="开始时间"
                                 end-placeholder="结束时间"
-                                @change="handleTime()"
+                                @change="handleDate()"
+                                :picker-options="pickerOptions0"
                                 class="handleTime"
                                 >
                             </el-date-picker>
@@ -50,15 +53,15 @@
                         <el-form-item label="设置播放开始时间" prop="timeValue1">
                             <el-time-picker
                                 v-model="form1.timeValue1"
-                                
+                               
                                 placeholder="开始时间">
                             </el-time-picker>
                          </el-form-item>
                          <el-form-item label="设置播放结束时间" prop="timeValue2">
                             <el-time-picker
                                 arrow-control
-                                v-model="form1.timeValue2"
                                 
+                                v-model="form1.timeValue2"
                                 placeholder="结束时间">
                             </el-time-picker>
                         </el-form-item>
@@ -72,9 +75,9 @@
             <div class="step2" v-show="active == 1 || active == 2">
                 <el-tabs v-model="activeMenu" @tab-click="handleMenu" class="tab">
                     <el-tab-pane label="FM任务" name="1" >
-                        <el-form >
-                            <el-form-item label="请输入FM频道" >
-                                <el-input v-model="FMName" placeholder="76.0~108.0"></el-input>
+                        <el-form ref="form2" :model="form2" :rules="rules">
+                            <el-form-item label="请输入FM频道" prop="FMName">
+                                <el-input v-model="form2.FMName" placeholder="76.0~108.0"></el-input>
                             </el-form-item>
                         </el-form>
                     </el-tab-pane>
@@ -83,7 +86,7 @@
                             style="width:50%;float:left;text-align: center;"
                             ref="upload"
                             action="https://jsonplaceholder.typicode.com/posts/"
-                            :before-upload="beforeUpload"
+                            :before-upload="voicebeforeUpload"
                             :on-remove="onRemove"
                             :on-exceed="handleExceed"
                             :limit="1"
@@ -147,30 +150,61 @@
                         </el-dialog>
                     </el-tab-pane>
                     <el-tab-pane label="文本任务" name="3">
-                        <el-input
-                            class="area"
-                            type="textarea"
-                            :rows="7"
-                            :maxlength="4000"
-                            :minlength="1"
-                            resize="none"
-                            placeholder="请输入内容"
-                            v-model="textarea1">
-                        </el-input>
-                        <el-input
-                        style="margin-top:10px;"
-                        placeholder="请输入标题"
-                        v-model="textTitle"
-                        clearable>
-                        </el-input>
-                        <p class="tip">文字内容应在4000个字以内；标题应在128个字以内且不能有特殊字符。</p>
+                        <div class="radio-tab">
+                            <el-radio v-model="radio" label="1">手动输入文本</el-radio>
+                            <el-radio v-model="radio" label="2">上传txt文档</el-radio>
+                        </div>
+                        <div v-if="radio == '1'">
+                            <el-form ref="form3" :model="form3" :rules="rules">
+                                <el-form-item  prop="textarea" style="margin-bottom:10px;position:relative;">
+                                    <el-input
+                                        class="area"
+                                        type="textarea"
+                                        :rows="7"
+                                        :maxlength="10000"
+                                        :minlength="1"
+                                        resize="none"
+                                        placeholder="请输入内容"
+                                        @input="inputTXT"
+                                        v-model="form3.textarea">
+                                    </el-input>
+                                    <span class="spanBottom">剩余{{spanBottom}}字</span>
+                                </el-form-item>
+                                <el-form-item  prop="textTitle" style="margin-bottom:10px;">
+                                    <el-input
+                                        style="margin-top:10px;"
+                                        placeholder="请输入标题"
+                                        v-model="form3.textTitle"
+                                        :maxlength="30"
+                                        :minlength="1"
+                                        clearable>
+                                    </el-input>
+                                </el-form-item>
+                            </el-form>
+                             <p class="tip">文字内容应在10000个字以内；标题应在30个字以内且不能有特殊字符。</p>
+                        </div>
+                        <div v-if="radio == '2'">
+                            <el-upload
+                            style="text-align: center;"
+                            ref="upload"
+                            action="https://jsonplaceholder.typicode.com/posts/"
+                            :before-upload="txtbeforeUpload"
+                            :on-remove="onRemove"
+                            :on-exceed="handleExceed"
+                            :limit="1"
+                            accept=".txt"
+                            >
+                            <el-button size="small" type="primary">本地上传</el-button>
+                            <div slot="tip" class="el-upload__tip">只能上传txt文件,文字内容应在10000个字以内</div>
+                            </el-upload>
+                        </div>
                     </el-tab-pane>
                     <el-tab-pane label="普通视频任务" name="4">
                         <el-upload
                             style="width:50%;float:left;text-align: center;"
                             ref="upload"
                             action="https://jsonplaceholder.typicode.com/posts/"
-                            :before-upload="beforeUpload"
+                            :before-upload="videobeforeUpload"
                             :on-remove="onRemove"
                             :on-exceed="handleExceed"
                             :limit="1"
@@ -251,31 +285,39 @@
         ],
         data() {
             return {
-                innerVisible1:false,
-                innerVisible2:false,
-                active: 0,
-                activeMenu:'1',
-                FMName:'',
-                textarea1:'',
-                textTitle:'',
+                //音频类型
                 mediaType:'',
+                //音频在线分页
                 pageInfo1:{
                     total:20,
                     currentPage: 5,
                 },
+                //视频在线分页
                 pageInfo2:{
                     total:20,
                     currentPage: 5,
                 },
+                //基本信息表单数据
                 form1:{
                     name:'',
                     textarea:'',
                     selectValue:'循环',
-                    dateValue:'',
-                    timeValue1:'',
-                    timeValue2:''
+                    dateValue:null,
+                    timeValue1:null,
+                    timeValue2:null,
                 },
+                //FM
+                form2:{
+                    FMName:'',
+                },
+                //文本内容
+                form3:{
+                    textarea:'',
+                    textTitle:'',
+                },
+                //下拉框
                 options1:options1,
+                //音频数据
                 tableData1:[
                     {
                         name:'123.mp3',
@@ -283,6 +325,7 @@
                         createTime:'2016.12.12'
                     }
                 ],
+                //视频数据
                 tableData2:[
                     {
                         name:'123.mp3',
@@ -290,7 +333,7 @@
                         createTime:'2016.12.12'
                     }
                 ],
-                rules1:{
+                rules:{
                     name:[
                         { required:true, message:"请输入任务名称" , trigger:'blur' }
                     ],
@@ -305,7 +348,28 @@
                     ],
                     timeValue2:[
                         { required:true, message:"请选择播放结束时间" , trigger:'change' }
+                    ],
+                    FMName:[
+                        { required:true, message:"请输入FM名称" , trigger:'blur' }
+                    ],
+                    textarea:[
+                        { required:true, message:"请输入文本内容" , trigger:'blur' }
+                    ],
+                    textTitle:[
+                        { required:true, message:"请输入文本标题" , trigger:'blur' }
                     ]
+                },
+                radio:'1',
+                innerVisible1:false,
+                innerVisible2:false,
+                active: 1,
+                placeholde:500, 
+                spanBottom:10000,
+                activeMenu:'1', //第二步导航
+                pickerOptions0: {
+                    disabledDate(time) {
+                        return time.getTime() < Date.now() - 8.64e7;
+                    }
                 }
             }
         },
@@ -313,15 +377,19 @@
             cancel() {
                 this.$emit("close");
             },
-            save () {
- 
+            handleMenu(tab,event) { //类型选择导航按钮
+                // this.activeMenu = tab;
             },
             next() {
                 this.$refs['form1'].validate((valid) =>{
                     if(valid){
                         let name = verify.mediaVerify(this.form1.name);
+                        let time = this.handleTime();
                         if(!name){
                             this.$message({type:'error',duration:1200,message:'名称格式不正确！'});
+                            return false;
+                        }
+                        if(!time){
                             return false;
                         }
                         this.active = 1;
@@ -330,24 +398,76 @@
                     }
                 })
             },
-            back() {
+            back() { //返回上一步
                 this.active = 0;
             },
-            handleTime() {
-                console.log(this.form1.timeValue)
+            save () { //保存
+                switch (this.activeMenu) {
+                    case '1': //FM
+                        let number = Number(this.form2.FMName);
+                        let fm     = verify.FMverify(number);
+                        if(!fm || number < 76.0 || number > 108.0){
+                            this.$message({type:'error',message:'FM频道格式不正确,且范围在76.0~108.0之间！'});
+                            return false;
+                        };
+                        break;
+                    case '2': //音频
+                        break;
+                    case '3'://文本
+                        let name = verify.mediaVerify(this.form3.textTitle);
+                        if(!name){
+                            this.$message({type:'error',message:'文本标题格式不正确！'});
+                            return false;
+                        }
+                        break;
+                    case '4': //视频
+                        break;
+                    default:
+                        break;
+                }
             },
-            handleMenu(tab,event) {
-                // this.activeMenu = tab;
+            submitData() {  //提交数据
+
             },
-            handleExceed(files, fileList) { //选择限制
+            handleDate() {  //选择日期
+                // console.log(this.form1.dateValue)
+            },
+            handleTime() { //选择时间
+                let flag  = true;
+                let time1 = this.form1.timeValue1;
+                let time2 = this.form1.timeValue2;
+                if(time1 && time2){
+                    let nowtime = Date.parse(new Date());
+                    if(time1 > time2){
+                        this.$message({type:'error',message:'设置播放结束时间必须大于开始时间！'});
+                        flag = false;
+                        return flag;
+                    }
+                    if(time1 < nowtime){
+                        this.$message({type:'error',message:'设置播放开始时间必须大于当前时间！'});
+                        flag = false;
+                        return flag;
+                    }
+                    if(time2 < nowtime){
+                        this.$message({type:'error',message:'设置播放结束时间必须大于当前时间！'});
+                        flag = false;
+                        return flag;
+                    }
+                }
+                return flag;
+            },
+            handleExceed(files, fileList) { //选择类型限制个数
                 // console.log(files);
                 this.$message.warning(`当前限制选择1个文件`);
             },
-            onRemove() {
+            onRemove() { //移除选中文件时
                 this.fileType = '';
             },
-            beforeUpload(file) { //上传之前
+
+            //选择音频文件具体操作
+            voicebeforeUpload(file) { //上传之前
                 this.fileType = file.name.split('.')[1];
+                const size    = file.size / 1024 / 1024 < 20;
                 if(this.fileType != 'mp3' && this.fileType != 'm4a' && this.fileType != 'wav'
                 && this.fileType != 'wma' && this.fileType != 'ogg' && this.fileType != 'amr'
                 && this.fileType != '3gp'
@@ -356,18 +476,52 @@
                     this.fileType = '';
                     return false;
                 }
+                if(!size){
+                    this.$message({type:'error',duration:1200,message:'添加失败，文件大小不能超过20M!'});
+                }
             },
+
+            //选择视频文件具体操作
+            videobeforeUpload(file) { //上传之前
+                this.fileType = file.name.split('.')[1];
+                const size    = file.size / 1024 / 1024 < 2048;
+                if(this.fileType != 'mp4'){
+                    this.$message.error(`添加失败！当前文件格式不正确!`);
+                    this.fileType = '';
+                    return false;
+                }
+                if(!size){
+                    this.$message({type:'error',duration:1200,message:'添加失败，文件大小不能超过2G!'});
+                }
+            },
+
+            //选择TXT文档具体操作
+            txtbeforeUpload(file) { //上传之前
+                this.fileType = file.name.split('.')[1];
+                if(this.fileType != 'txt' ){
+                    this.$message.error(`添加失败！当前文件格式不正确!`);
+                    this.fileType = '';
+                    return false;
+                }
+            },
+
             handleData1() {  //选择在线音频资源
 
             },
-            handleCurrentChange1() {
+            handleCurrentChange1() { //分页
 
             },
             handleData2() { //选择在线视频资源
 
             },
-            handleCurrentChange2() {
+            handleCurrentChange2() { //分页
 
+            },
+            inputText() { //任务描述剩余字数
+                this.placeholde = 500 - this.form1.textarea.length;
+            },
+            inputTXT(){
+                this.spanBottom = 10000 - this.form3.textarea.length;
             }
         }
     }
@@ -423,5 +577,27 @@
         font-size: 12px;
         padding-left: 5px;
         padding-top: 10px;
+    }
+    .textarea{
+        position: relative;
+    }
+    .textarea .spanInt{
+        position: absolute;
+        right: 5px;
+        bottom: -5px;
+        color: #606266;
+        font-size: 12px;
+    }
+    .radio-tab{
+        line-height: 30px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .spanBottom{
+        position: absolute;
+        right: 5px;
+        bottom: -5px;
+        color: #606266;
+        font-size: 12px;
     }
 </style>

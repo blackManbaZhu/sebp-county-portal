@@ -23,13 +23,9 @@ export const Transaction = currentTime => {
   
     return currentTime + uuid;
 }
-  
-  
-  
-  
-  //获取ip
+//获取ip
 export const XClientIP = returnCitySN["cip"];
-  //获取token
+//获取token
 export const token =  sessionStorage.getItem('token');
 
 export const requestTableList = params => { return axios.post(`${base}/ms/table/list`, params).then(res => res.data); }
@@ -69,7 +65,7 @@ export const verify = {
     },
     emailVerify(number) {
         var flag;
-        var myreg = /^([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+@([a-zA-Z0-9]+[_|\_|\-|\.]?)*[a-zA-Z0-9]+\.[a-zA-Z]{2,3}$/;;
+        var myreg = /^([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+@([a-zA-Z0-9]+[_|\_|\-|\.]?)*[a-zA-Z0-9]+\.[a-zA-Z]{2,3}$/;
         if (!myreg.test(number)) {
             flag = false;
         } else {
@@ -89,8 +85,21 @@ export const verify = {
     },
     mediaVerify(name) {
         var flag;
-        var myreg = /^[A-Za-z0-9\u4e00-\u9fa5\_|\-|]+$/;
+        var myreg = /^[A-Za-z0-9\u4e00-\u9fa5\_|\-\.|]+$/;
         if (!myreg.test(name)) {
+            flag = false;
+        } else {
+            flag = true;
+        }
+        return flag;
+    },
+    FMverify(number) {
+        var flag;
+        var myreg = /^([0-9]{2,3})+(\.[0-9]{1})+$/;
+        if(number == 76 || number == 108){
+            myreg = /^([0-9]{2,3})+$/;
+        }
+        if (!myreg.test(number)) {
             flag = false;
         } else {
             flag = true;

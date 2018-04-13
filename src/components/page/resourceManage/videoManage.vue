@@ -75,16 +75,17 @@
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogFormVisible = false">取 消</el-button>
-                <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+                <el-button type="primary" @click="saveEdit()">确 定</el-button>
             </div>
         </el-dialog>
-        <!-- 新增音频弹窗 -->
+        <!-- 新增视频弹窗 -->
         <add-video :addMedia="showAdd" @close="closeAdd"></add-video>
     </div>
 </template>
 
 <script>
-    import addVideo from "./Dialog/addVideo.vue"
+    import addVideo from "./Dialog/addVideo.vue";
+    import { verify } from "../../../api/api.js";
     let data = [
         {
             name:'雨蝶.mp3',
@@ -132,9 +133,24 @@
             handleCurrentChange(val) {
 
             },
-            editMedia(index,row) {
+            editMedia(index,row) { //编辑名称
                 this.form.name = row.name;
                 this.dialogFormVisible = true;
+            },
+            saveEdit() { //保存名称编辑
+                this.$refs['form'].validate((valid) =>{
+                    if(valid){
+                        let name = verify.mediaVerify(this.form.name);
+                        if(!name){
+                            this.$message({type:'error',duration:1200,message:'名称格式错误'});
+                            return false;
+                        }
+                        this.dialogFormVisible = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
             },
             addMedia() {
                 this.showAdd = true;

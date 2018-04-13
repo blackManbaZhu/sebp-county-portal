@@ -209,17 +209,23 @@
 
             },
             editMedia(index,row) { //编辑名称
-                this.form.name = row.name.split('.')[0];
+                this.form.name = row.name;
                 this.dialogFormVisible = true;
             },
             saveEdit() { //保存编辑
-                let name = verify.mediaVerify(this.form.name);
-                if(!name){
-                    this.$message({type:'error',duration:1200,message:'名称格式错误'});
-                    return false;
-                }
-                this.dialogFormVisible = false;
-                this.$message({type:'success',duration:1200,message:'保存成功!'});
+                this.$refs['form'].validate((valid) =>{
+                    if(valid){
+                        let name = verify.mediaVerify(this.form.name);
+                        if(!name){
+                            this.$message({type:'error',duration:1200,message:'名称格式错误'});
+                            return false;
+                        }
+                        this.dialogFormVisible = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
             },
             deleteMedia(index,row) { //删除单个
                 this.$confirm('确认删除该音频资源吗?', '提示', {

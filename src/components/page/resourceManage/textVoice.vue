@@ -74,7 +74,7 @@
                         class="area"
                         type="textarea"
                         :rows="7"
-                        :maxlength="4000"
+                        :maxlength="10000"
                         :minlength="1"
                         resize="none"
                         placeholder="请输入内容"
@@ -86,13 +86,15 @@
                         style="margin-top:10px;"
                         placeholder="请输入标题"
                         v-model="form1.title"
+                        :minlength="1"
+                        :maxlength="30"
                         clearable>
                     </el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogFormVisible = false">取 消</el-button>
-                <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+                <el-button type="primary" @click="saveEdit()">确 定</el-button>
             </div>
         </el-dialog>
         <!-- 新增音频弹窗 -->
@@ -103,7 +105,7 @@
                         class="area"
                         type="textarea"
                         :rows="7"
-                        :maxlength="4000"
+                        :maxlength="10000"
                         :minlength="1"
                         resize="none"
                         placeholder="请输入内容"
@@ -115,19 +117,22 @@
                         style="margin-top:10px;"
                         placeholder="请输入标题"
                         v-model="form2.title"
+                        :minlength="1"
+                        :maxlength="30"
                         clearable>
                     </el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="addFm = false">取 消</el-button>
-                <el-button type="primary" @click="addFm = false">确 定</el-button>
+                <el-button type="primary" @click="saveAdd()">确 定</el-button>
             </div>
         </el-dialog>
     </div>
 </template>
 
 <script>
+    import { verify } from "../../../api/api.js";
     let data = [
         {
             title:'标题111',
@@ -177,12 +182,41 @@
             handleCurrentChange(val) {
 
             },
-            editMedia(index,row) {
+            editMedia(index,row) {  //编辑
                 this.form1.title = row.title;
                 this.dialogFormVisible = true;
             },
-            addMedia() {
+            saveEdit() { //保存编辑
+                this.$refs['form1'].validate((valid) =>{
+                    if(valid){
+                        var name = this.titleVerify(this.form1.title);
+                        if(!name){
+                            return name;
+                        }
+                        this.dialogFormVisible = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
+            },
+            addMedia() {  //新增
                 this.addFm = true;
+            }, 
+            saveAdd() { //保存新增
+                this.$refs['form2'].validate((valid) =>{
+                    if(valid){
+                        var name = this.titleVerify(this.form2.title);
+                        if(!name){
+                            return name;
+                        }    
+                        
+                        this.addFm = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
             },
             deleteMedia(index,row) { //删除单个
                 this.$confirm('确认删除该文本资源吗?', '提示', {
@@ -205,8 +239,17 @@
                 }).catch(() => {
                     console.log("出错!!")
                 });
-
             },
+            titleVerify(value) {
+                let flag = true;
+                let name = verify.mediaVerify(value);
+                if(!name){
+                    this.$message({type:'error',duration:1200,message:'名称格式错误'});
+                    flag = false;
+                    return flag;
+                }
+                return flag;
+            }
         }
     }
 </script>

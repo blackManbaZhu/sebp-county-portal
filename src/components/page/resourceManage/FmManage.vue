@@ -76,7 +76,7 @@
         <el-dialog title="修改FM频道" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
             <el-form :model="form1" :rules="rules" ref="form1">
                 <el-form-item label="FM名称" :label-width="formLabelWidth" prop="name">
-                 <el-input v-model="form1.name" auto-complete="off" placeholder="请输入名称"></el-input>
+                 <el-input :maxlength="30" v-model="form1.name" auto-complete="off" placeholder="请输入名称"></el-input>
                 </el-form-item>
                 <el-form-item label="FM频道" :label-width="formLabelWidth" prop="channel">
                  <el-input v-model="form1.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
@@ -84,14 +84,14 @@
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogFormVisible = false">取 消</el-button>
-                <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+                <el-button type="primary" @click="saveEdit()">保 存</el-button>
             </div>
         </el-dialog>
         <!-- 新增音频弹窗 -->
         <el-dialog title="新增FM频道" :visible.sync="addFm" :close-on-click-modal="false">
             <el-form :model="form2" :rules="rules" ref="form2">
                 <el-form-item label="FM名称" :label-width="formLabelWidth" prop="name">
-                 <el-input v-model="form2.name" auto-complete="off" placeholder="请输入名称"></el-input>
+                 <el-input :maxlength="30" v-model="form2.name" auto-complete="off" placeholder="请输入名称"></el-input>
                 </el-form-item>
                 <el-form-item label="FM频道" :label-width="formLabelWidth" prop="channel">
                  <el-input v-model="form2.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
@@ -99,14 +99,15 @@
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="addFm = false">取 消</el-button>
-                <el-button type="primary" @click="addFm = false">确 定</el-button>
+                <el-button type="primary" @click="saveAdd()">添 加</el-button>
             </div>
         </el-dialog>
     </div>
 </template>
 
 <script>
-    import addVideo from "./Dialog/addVideo.vue"
+    import addVideo from "./Dialog/addVideo.vue";
+    import { verify } from "../../../api/api.js";
     let data = [
         {
             name:'123',
@@ -165,13 +166,49 @@
             handleCurrentChange(val) {
 
             },
-            editMedia(index,row) {
+            editMedia(index,row) { //编辑
                 this.form1.channel = row.channel;
                 this.form1.name    = row.name;
                 this.dialogFormVisible = true;
             },
-            addMedia() {
+            saveEdit() { //保存编辑
+                this.$refs['form1'].validate((valid) =>{
+                    if(valid){
+                        var name = this.FMnameVerify(this.form1.name);
+                        var fm   = this.FMverify(this.form1.channel);
+                        if(!name){
+                            return name;
+                        }
+                        if(!fm){
+                            return fm;
+                        }
+                        this.dialogFormVisible = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
+            },
+            addMedia() {  //新增
                 this.addFm = true;
+            },
+            saveAdd() { //保存新增
+                this.$refs['form2'].validate((valid) =>{
+                    if(valid){
+                        var name = this.FMnameVerify(this.form2.name);
+                        var fm   = this.FMverify(this.form2.channel);
+                        if(!name){
+                            return name;
+                        }
+                        if(!fm){
+                            return fm;
+                        }
+                        this.addFm = false;
+                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                    }else{
+                        return false;
+                    }
+                })
             },
             deleteMedia(index,row) { //删除单个
                 this.$confirm('确认删除该FM资源吗?', '提示', {
@@ -196,6 +233,27 @@
                 });
 
             },
+            FMnameVerify(value) {  //校验名称
+                let flag = true;
+                let name = verify.mediaVerify(value);
+                if(!name){
+                    this.$message({type:'error',duration:1200,message:'名称格式错误'});
+                    flag = false;
+                    return flag;
+                }
+                return flag;
+            },
+            FMverify(value){  //校验频道取值
+                let flag   = true;
+                let number = Number(value);
+                let fm     = verify.FMverify(number);
+                if(!fm || number < 76.0 || number > 108.0){
+                    this.$message({type:'error',message:'FM频道格式不正确,且范围在76.0~108.0之间！'});
+                    flag = false;
+                    return flag;
+                }
+                return flag;
+            }
         }
     }
 </script>

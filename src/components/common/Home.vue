@@ -3,7 +3,7 @@
         <v-head></v-head>
         <v-sidebar @clickMenu="clickMenu" @initMenu="initMenu"></v-sidebar>
         <div class="content">
-             <el-tabs v-model="activeName" @tab-click="handleClick">
+             <!-- <el-tabs v-model="activeName" @tab-click="handleClick">
                 <el-tab-pane 
                  v-for="item in tab" 
                  :key="item.index"
@@ -11,6 +11,10 @@
                  :label="item.title" 
                  :name="item.title"
                  >
+                 </el-tab-pane>
+            </el-tabs> -->
+            <el-tabs v-model="activeName">
+                <el-tab-pane :label="activeName" :name="activeName">
                  </el-tab-pane>
             </el-tabs>
             <!-- <div class="line"></div> -->

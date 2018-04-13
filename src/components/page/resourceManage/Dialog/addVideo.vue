@@ -45,10 +45,14 @@
             },
             beforeUpload(file) { //上传之前
                 this.fileType = file.name.split('.')[1];
+                const size    = file.size / 1024 / 1024 < 2048;
                 if(this.fileType != 'mp4'){
                     this.$message.error(`添加失败！当前文件格式不正确!`);
                     this.fileType = '';
                     return false;
+                }
+                if(!size){
+                    this.$message({type:'error',duration:1200,message:'添加失败，文件大小不能超过2G!'});
                 }
             },
             submitUpload() {
