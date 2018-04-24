@@ -165,20 +165,12 @@
           :visible.sync="dialogVisible"
           width="50%"
           >
-          <el-form :model="form3" label-width="100px">
-             <el-form-item label="文本名称">
-                <el-input disabled v-model="form3.mediaName"></el-input>
-             </el-form-item>
-             <el-form-item label="创建人">
-                <el-input disabled v-model="form3.createUser"></el-input>
-             </el-form-item>
-             <el-form-item label="文本内容">
-                <el-input disabled v-model="form3.mediaContext"></el-input>
-             </el-form-item>
-             <el-form-item label="创建时间">
-                <el-input disabled v-model="form3.createTime"></el-input>
-             </el-form-item>
-          </el-form>
+            <ul class="ul-content">
+                <li><label>创建人:</label><span>{{form3.createUser}}</span></li>
+                <li><label>创建时间:</label><span>{{form3.createTime}}</span></li>
+                <li><label>文本名称:</label><span>{{form3.mediaName}}</span></li>
+                <li><label>文本内容:</label><span class="txt-cont">{{form3.mediaContext}}</span></li>
+            </ul>
         </el-dialog>
 
     </div>
@@ -625,6 +617,36 @@
 </script>
 
 <style scoped>
+    .ul-content{
+        width: 100%;
+        display: inline-table;
+    }
+    .ul-content li{
+        float: left;
+        margin-top: 20px;
+        width: 50%;
+        line-height: 40px;
+        font-size: 15px;
+    }
+    .ul-content li label{
+        padding-left: 15px;
+        width: 30%;
+        height: 35px;
+        float: left;
+    }
+    .ul-content li span{
+        padding-left: 20px;
+        float: left;
+        display: inline-block;
+        width: 70%;
+        background-color: #f5f7fa;
+        border-color: #e4e7ed;
+    }
+    .ul-content .txt-cont{
+        height: 80px;
+        overflow: auto;
+        word-wrap: break-word;
+    }
     .el-main {
         height: 80vh;
         color: #333;

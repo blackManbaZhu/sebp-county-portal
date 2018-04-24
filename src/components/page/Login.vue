@@ -73,7 +73,7 @@
     //获取本地IP
     let TransactionID = Transaction();
     //验证码
-    let CODE_API = `${API}/CountryUserMgmt/user/v1`;
+    let CODE_API  = `${API}/CountryUserMgmt/user/v1`;
     //登录
     let LOGIN_API =  `${API}/CountryUserMgmt/user/v1`;
     export default {
@@ -188,7 +188,8 @@
                     };
                     this.axios.post(`${LOGIN_API}/login`,Params,{headers:{'TransactionID':TransactionID,'XClientIP': XClientIP}}).then(res => {
                         // console.log(res.data)
-                        if(res.data.code == 'Success'){  //登录成功
+                        if(res.data.code == 'Success'){  
+                            //登录成功
                             let setPWDNeeded     = res.data.payload.setPWDNeeded; //是否第一次登录
                             let refreshPWDNeeded = res.data.payload.refreshPWDNeeded; //是否长时间没有设置密码
                             let userData = res.data.payload.user; //用户基本信息
@@ -200,8 +201,11 @@
                             localStorage.setItem('userId',userData.userId);
                             localStorage.setItem('orgId',userData.orgId);
 
+                            //存放token
                             localStorage.setItem('token',res.data.payload.token);
-                            if(setPWDNeeded || refreshPWDNeeded){ //第一次登录需要重置密码
+
+                            if(setPWDNeeded || refreshPWDNeeded){ 
+                                //第一次登录需要重置密码
                                 this.editdialog = true;
                                 this.logining   = false;
                                 return false;
@@ -272,7 +276,6 @@
                         let password = verify.passwordVerify(this.form.newPassword);
 
                         if(!password){
-
                             this.$message({type:'error',duration:1200,message:'密码格式错误，且长度在6-20之间，请重新输入！'});
                             return false;
                         }
@@ -284,7 +287,9 @@
                             this.$message({type:'error',duration:1200,message:'新旧密码不能相同!'});
                             return false;
                         }
+
                         var Params = {"oldPassword": beforePassword,"newPassword": newPassword}
+                        
                         this.axios.post(`${LOGIN_API}/changePassword`,Params,{headers:{'X-Transaction':TransactionID,'X-User-Token': userToken}}).then(res => {
                             // console.log(res.data)
                             if(res.data.code == 'Success'){

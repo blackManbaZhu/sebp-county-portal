@@ -101,18 +101,18 @@ export default new Router({
                     component: resolve => require(['../components/page/systemManage/systemConfig.vue'], resolve)
                 },
                 //-_- demo
-                {
-                    path: '/basetable',
-                    component: resolve => require(['../components/page/demo/BaseTable.vue'], resolve)
-                },
+                // {
+                //     path: '/basetable',
+                //     component: resolve => require(['../components/page/demo/BaseTable.vue'], resolve)
+                // },
                 {
                     path: '/map',
                     component: resolve => require(['../components/page/demo/map.vue'], resolve)
                 },
-                {
-                    path: '/vuetable',
-                    component: resolve => require(['../components/page/demo/VueTable.vue'], resolve)     // vue-datasource组件
-                },
+                // {
+                //     path: '/vuetable',
+                //     component: resolve => require(['../components/page/demo/VueTable.vue'], resolve)     // vue-datasource组件
+                // },
             ]
         },
         {

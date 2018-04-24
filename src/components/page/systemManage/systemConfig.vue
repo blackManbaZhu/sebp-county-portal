@@ -69,8 +69,7 @@
         <el-dialog
           title="查看详情"
           :visible.sync="dialogVisible"
-          width="60%"
-          :before-close="handleClose">
+          width="60%">
           <el-form :model="form" label-width="80px">
              <el-form-item label="配置名称">
                 <el-input disabled v-model="form.configName"></el-input>
@@ -94,8 +93,7 @@
         <el-dialog
           title="更新"
           :visible.sync="dialogVisibleUpdata"
-          width="60%"
-          :before-close="handleClose">
+          width="60%">
           <el-form :model="updata" label-width="80px">
              <el-form-item label="配置值">
                 <el-input v-model="updata.configValue"></el-input>
@@ -334,13 +332,13 @@
                this.findList(Params);
             },
             //弹出框关闭
-            handleClose(done) {
-              this.$confirm('确认关闭？')
-                .then(_ => {
-                  done();
-                })
-                .catch(_ => {});
-            },
+            // handleClose(done) {
+            //   this.$confirm('确认关闭？')
+            //     .then(_ => {
+            //       done();
+            //     })
+            //     .catch(_ => {});
+            // },
 
         },
         //默认请求数据

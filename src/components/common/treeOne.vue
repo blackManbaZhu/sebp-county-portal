@@ -41,7 +41,6 @@
             }
         },
         created() {
-            this.data = [];
             this.getRoot();
         },
         methods:{

@@ -183,66 +183,56 @@
           :visible.sync="dialogVisible"
           width="50%"
           >
-          <el-form :model="form" label-width="100px">
-             <el-form-item label="任务名称">
-                <el-input disabled v-model="form.taskName"></el-input>
-             </el-form-item>
-             <el-form-item label="任务描述">
-                <el-input disabled v-model="form.taskDesc"></el-input>
-             </el-form-item>
-             <el-form-item label="创建人">
-                <el-input disabled v-model="form.createUser"></el-input>
-             </el-form-item>
-             <el-form-item label="任务类型">
-                <el-input disabled v-model="form.taskType"></el-input>
-             </el-form-item>
-             <!-- 名称 -->
-              <el-form-item v-if="form.taskType == '音频任务'" label="音频名称">
-                <el-input disabled v-model="form.mediaName"></el-input>
-             </el-form-item>
-             <!-- 名称 -->
-              <el-form-item v-if="form.taskType == 'FM任务'" label="FM名称">
-                <el-input disabled v-model="form.mediaName"></el-input>
-             </el-form-item>
-             <!-- 名称 -->
-              <el-form-item v-if="form.taskType == '文本任务'" label="文本名称">
-                <el-input disabled v-model="form.mediaName"></el-input>
-             </el-form-item>
-             <!-- 名称 -->
-              <el-form-item v-if="form.taskType == '网络电台任务'" label="网络电台名称">
-                <el-input disabled v-model="form.mediaName"></el-input>
-             </el-form-item>
-
-             <!-- 网络电台地址 -->
-              <el-form-item v-if="form.taskType == '网络电台任务'" label="网络电台地址">
-                <el-input disabled v-model="form.mediaContext"></el-input>
-             </el-form-item>
-
-              <!-- 文本内容 -->
-              <el-form-item v-if="form.taskType == '文本任务'" label="文本内容">
-                <el-input disabled v-model="form.mediaContext"></el-input>
-             </el-form-item>
-             <!-- FM频道 -->
-              <el-form-item v-if="form.taskType == 'FM任务'" label="FM频道">
-                <el-input disabled v-model="form.mediaContext"></el-input>
-             </el-form-item>
-             
-             <el-form-item label="是否循环">
-                <el-input disabled v-model="form.isCycle"></el-input>
-             </el-form-item>
-             <el-form-item label="开始日期">
-                <el-input disabled v-model="form.startTime"></el-input>
-             </el-form-item>
-             <el-form-item label="结束日期">
-                <el-input disabled v-model="form.endTime"></el-input>
-             </el-form-item>
-             <el-form-item label="播放开始时间">
-                <el-input disabled v-model="form.playBeginTime"></el-input>
-             </el-form-item>
-             <el-form-item label="播放结束时间">
-                <el-input disabled v-model="form.playEndTime"></el-input>
-             </el-form-item>
-          </el-form>
+          <ul class="ul-content">
+              <li>
+                <label>任务名称:</label><span>{{form.taskName}}</span>
+              </li>
+              <li>
+                <label>任务描述:</label><span class="txt-cont">{{form.taskDesc ? form.taskDesc : '暂无描述' }}</span>
+              </li>
+              <li>
+                <label>创建人:</label><span>{{form.createUser}}</span>
+              </li>
+              <li>
+                <label>任务类型:</label><span>{{form.createUser}}</span>
+              </li>
+              <li v-if="form.taskType == '音频任务'">
+                <label>音频名称:</label><span>{{form.mediaName}}</span>
+              </li>
+              <li v-if="form.taskType == 'FM任务'">
+                <label>FM名称:</label><span>{{form.mediaName}}</span>
+              </li>
+              <li v-if="form.taskType == '文本任务'">
+                <label>文本标题:</label><span>{{form.mediaName}}</span>
+              </li>
+              <li v-if="form.taskType == '网络电台任务'">
+                <label>网络电台名称:</label><span>{{form.mediaName}}</span>
+              </li>
+              <li v-if="form.taskType == '网络电台任务'">
+                <label>网络电台地址:</label><span>{{form.mediaContext}}</span>
+              </li>
+              <li v-if="form.taskType == '文本任务'">
+                <label>文本内容:</label><span class="txt-cont">{{form.mediaContext}}</span>
+              </li>
+              <li v-if="form.taskType == 'FM任务'">
+                <label>FM频道:</label><span>{{form.mediaContext}}</span>
+              </li>
+              <li>
+                <label>是否循环:</label><span>{{form.isCycle}}</span>
+              </li>
+              <li>
+                <label>开始日期:</label><span>{{form.startTime}}</span>
+              </li>
+              <li>
+                <label>结束日期:</label><span>{{form.endTime}}</span>
+              </li>
+              <li>
+                <label>播放开始时间:</label><span>{{form.playBeginTime}}</span>
+              </li>
+              <li>
+                <label>播放结束时间:</label><span>{{form.playEndTime}}</span>
+              </li>
+          </ul>
         </el-dialog>
 
         <add-task :addTask="showAdd" @getList="getListData"  @close="closeAdd"></add-task>
@@ -577,6 +567,36 @@
 </script>
 
 <style scoped>
+    .ul-content{
+        width: 100%;
+        display: inline-table;
+    }
+    .ul-content li{
+        float: left;
+        margin-top: 20px;
+        width: 50%;
+        line-height: 40px;
+        font-size: 15px;
+    }
+    .ul-content li label{
+        padding-left: 15px;
+        width: 30%;
+        height: 35px;
+        float: left;
+    }
+    .ul-content li span{
+        padding-left: 20px;
+        float: left;
+        display: inline-block;
+        width: 70%;
+        background-color: #f5f7fa;
+        border-color: #e4e7ed;
+    }
+    .ul-content .txt-cont{
+        height: 40px;
+        overflow: auto;
+        word-wrap: break-word;
+    }
     .el-main {
         height: 80vh;
         color: #333;
