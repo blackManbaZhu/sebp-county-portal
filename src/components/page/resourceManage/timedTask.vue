@@ -7,9 +7,10 @@
                     <el-input
                         placeholder="请输入名称搜索"
                         prefix-icon="el-icon-search"
-                        v-model="inputSeach">
+                        v-model="inputSeach"
+                        @keyup.enter.native="search()">
                     </el-input>
-                    <el-select v-model="selectValue1" placeholder="是否循环" class="select">
+                    <!-- <el-select v-model="selectValue1" placeholder="是否循环" class="select">
                         <el-option
                         v-for="item in options1"
                         :key="item.value"
@@ -24,12 +25,12 @@
                         :label="item.label"
                         :value="item.value">
                         </el-option>
-                    </el-select>
+                    </el-select> -->
                 </div>
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="88%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -39,14 +40,20 @@
                         width="45">
                         </el-table-column>
                         <el-table-column
-                        prop="name"
+                        prop="taskName"
                         label="任务名称"
                         header-align="center"
                         >
                         </el-table-column>
                         <el-table-column
-                        prop="creator"
+                        prop="createUser"
                         label="创建人"
+                        header-align="center"
+                        >
+                        </el-table-column>
+                        <el-table-column
+                        prop="createTime"
+                        label="创建时间"
                         header-align="center"
                         >
                         </el-table-column>
@@ -56,22 +63,22 @@
                         label="任务类型">
                         </el-table-column>
                         <el-table-column
-                        prop="useLoop"
+                        prop="isCycle"
                         header-align="center"
                         label="是否循环">
                         </el-table-column>
                         <el-table-column
                         prop="startTime"
                         header-align="center"
-                        label="开始时间">
+                        label="开始日期">
                         </el-table-column>
                         <el-table-column
                         prop="endTime"
                         header-align="center"
-                        label="结束时间">
+                        label="结束日期">
                         </el-table-column>
                         <el-table-column
-                        prop="playStartTime"
+                        prop="playBeginTime"
                         header-align="center"
                         label="播放开始时间">
                         </el-table-column>
@@ -85,7 +92,11 @@
                         label="操作"
                         >
                         <template slot-scope="scope">
-                            <el-button type="text" @click="play(scope.$index, scope.row)"><i class="fa fa-play-circle"></i></el-button>
+                            <el-button 
+                            v-if="scope.row.taskType == '音频任务' 
+                            || scope.row.taskType == '视频任务' || scope.row.taskType == '网络电台任务'" 
+                            type="text" @click="play(scope.$index, scope.row)"><i class="fa fa-play-circle"></i></el-button>
+                            <el-button type="text" @click="lookDetail(scope.$index, scope.row)"><i style="font-size:16px;" class="fa fa-file-text-o"></i></el-button>
                             <el-button type="text" @click="deleteTime(scope.$index, scope.row)"><i class="fa fa-trash-o"></i></el-button>
                         </template>
                         </el-table-column>
@@ -94,9 +105,11 @@
                     <el-pagination
                         style="margin-top:15px;float:right;"
                         background
+                        v-if="pShow"
                         @current-change="handleCurrentChange"
-                        :page-size="pageInfo.currentPage"
                         layout="total, prev, pager, next, jumper"
+                        :page-size="pageSize"
+                        :current-page="pageInfo.page"
                         :total="pageInfo.total">
                     </el-pagination>
                 </div>
@@ -106,8 +119,14 @@
                 </div>
             </el-main>
         </el-container>
-        <!-- 试听 -->
-        <el-dialog title="定时任务试听" :visible.sync="playMedia" @close="closePlay"  :close-on-click-modal="false">
+
+
+        <!-- 音频试听 -->
+        <el-dialog 
+            title="定时任务试听" 
+            :visible.sync="playMedia" 
+            @close="closePlay"  
+            :close-on-click-modal="false">
             <div class="audio-box">
                 <div class="audio-container">
                     <div class="audio-view">
@@ -146,24 +165,95 @@
                 </div>
 	        </div>
         </el-dialog>
-        <add-task :addTask="showAdd" @close="closeAdd"></add-task>
+
+        <!-- 网络电台试听 -->
+        <el-dialog title="网络电台试听" :visible.sync="playInternetRadio" @close="closePlayInternetRadio"  :close-on-click-modal="false">
+                <p>请先允许flash插件在浏览器上运行</p>
+                <a 
+                    href="#"
+                    style="display:block;width:100%;height:330px;font-size:20px;"  
+                    id="player"> 
+                    点击播放
+                </a>
+        </el-dialog>
+
+        <!-- 查看详情 -->
+        <el-dialog
+          title="查看详情"
+          :visible.sync="dialogVisible"
+          width="50%"
+          >
+          <el-form :model="form" label-width="100px">
+             <el-form-item label="任务名称">
+                <el-input disabled v-model="form.taskName"></el-input>
+             </el-form-item>
+             <el-form-item label="任务描述">
+                <el-input disabled v-model="form.taskDesc"></el-input>
+             </el-form-item>
+             <el-form-item label="创建人">
+                <el-input disabled v-model="form.createUser"></el-input>
+             </el-form-item>
+             <el-form-item label="任务类型">
+                <el-input disabled v-model="form.taskType"></el-input>
+             </el-form-item>
+             <!-- 名称 -->
+              <el-form-item v-if="form.taskType == '音频任务'" label="音频名称">
+                <el-input disabled v-model="form.mediaName"></el-input>
+             </el-form-item>
+             <!-- 名称 -->
+              <el-form-item v-if="form.taskType == 'FM任务'" label="FM名称">
+                <el-input disabled v-model="form.mediaName"></el-input>
+             </el-form-item>
+             <!-- 名称 -->
+              <el-form-item v-if="form.taskType == '文本任务'" label="文本名称">
+                <el-input disabled v-model="form.mediaName"></el-input>
+             </el-form-item>
+             <!-- 名称 -->
+              <el-form-item v-if="form.taskType == '网络电台任务'" label="网络电台名称">
+                <el-input disabled v-model="form.mediaName"></el-input>
+             </el-form-item>
+
+             <!-- 网络电台地址 -->
+              <el-form-item v-if="form.taskType == '网络电台任务'" label="网络电台地址">
+                <el-input disabled v-model="form.mediaContext"></el-input>
+             </el-form-item>
+
+              <!-- 文本内容 -->
+              <el-form-item v-if="form.taskType == '文本任务'" label="文本内容">
+                <el-input disabled v-model="form.mediaContext"></el-input>
+             </el-form-item>
+             <!-- FM频道 -->
+              <el-form-item v-if="form.taskType == 'FM任务'" label="FM频道">
+                <el-input disabled v-model="form.mediaContext"></el-input>
+             </el-form-item>
+             
+             <el-form-item label="是否循环">
+                <el-input disabled v-model="form.isCycle"></el-input>
+             </el-form-item>
+             <el-form-item label="开始日期">
+                <el-input disabled v-model="form.startTime"></el-input>
+             </el-form-item>
+             <el-form-item label="结束日期">
+                <el-input disabled v-model="form.endTime"></el-input>
+             </el-form-item>
+             <el-form-item label="播放开始时间">
+                <el-input disabled v-model="form.playBeginTime"></el-input>
+             </el-form-item>
+             <el-form-item label="播放结束时间">
+                <el-input disabled v-model="form.playEndTime"></el-input>
+             </el-form-item>
+          </el-form>
+        </el-dialog>
+
+        <add-task :addTask="showAdd" @getList="getListData"  @close="closeAdd"></add-task>
     </div>
 </template>
 
 <script>
     import addTask from "./Dialog/addTask.vue";
-    let data = [
-        {
-            name:'定时任务1',
-            creator:'xx-xx',
-            taskType:'普通类型',
-            useLoop:'循环',
-            startTime:'2018-03-26',
-            endTime:'2018-03-26',
-            playStartTime:'14:00:00',
-            playEndTime:'17:00:00'
-        }
-    ];
+    import { verify , API, Headers , getTime ,trim ,allSrim,tokenMessage} from "../../../api/api.js";
+    //获取数据
+    let TX_API = `${API}/CountryResMgmt/media/v1`;
     let option1 = [
         {
             value:'全部',
@@ -207,34 +297,166 @@
             return {
                 options1:option1,
                 options2:option2,
-                tableList:data,
+                tableList:[],
                 inputSeach:'',
                 selectValue1:'',
                 selectValue2:'',
+                multipleSelection:[],
+                //分页
+                pShow:false,
+                pageSize:10,
+                pageInfo:{
+                    total:0,
+                    page: 1,
+                },
+                //任务详情信息
+                form:{},
                 showAdd:false,
                 playMedia:false,
-                multipleSelection:[],
-                pageInfo:{
-                    total:100,
-                    currentPage: 10,
-                }
+                dialogVisible:false,
+                playInternetRadio:false
             }
         },
+        created() {
+            let Params = {
+                "keyword": '',
+            }
+            this.getListData(Params);
+        },
         methods:{
+            getListData(Params) { //获取数据列表
+
+                // let Params= {"keyword":keyword, 'pageNum':pageNum, "pageSize":pageSize};
+
+                this.axios.post(`${TX_API}/findAllTaskInfo`,Params,{ headers : Headers }).then(res => { 
+                    if(res.data.code == "Success"){
+                        let data = res.data.payload;
+                        //获取数据
+                        this.tableList = data.list.map((value,index) =>{
+                            value.createTime= getTime(value.createTime);
+                            value.startTime = getTime(value.startTime).split(' ')[0];
+                            value.endTime   = getTime(value.endTime).split(' ')[0];
+                            value.isCycle   = value.isCycle == '1' ? '循环' : '不循环';
+                            value.taskType  = value.taskType =='1' ? '音频任务':value.taskType =='2' ? '视频任务':value.taskType =='3' ? '文本任务'
+                            : value.taskType =='4' ? 'FM任务':value.taskType =='5' ? '网络电台任务' : value.taskType =='6' ? '录音任务':'';
+                            return value;
+                        })
+
+                        //总数
+                        this.pageInfo.total = data.total; 
+
+                        if( this.pageInfo.total > 10) {
+                            this.pShow = true;
+                        }
+                        
+
+                    }else {
+                        
+                        if(res.data.code == 'ParamInvalid') {
+                            this.$message({type: 'error',message:'不能输入带有空格和特殊字符、乱码的关键字'})
+                            return false;
+                        }
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: '请求出错，请刷新页面！',
+                        type: 'warning'
+                    });
+                });
+            },
+            
+            handleCurrentChange(page) {
+                //点击分页
+                let keyword = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var  Params = {
+                    "keyword": keyword,
+                    "pageNum":page
+                }
+
+                this.getListData(Params);
+            },
+
+            //搜索
+            search() {
+                this.pageInfo.page = 1;
+
+                let keyWords = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var Params = {
+                    "keyword":keyWords,
+                }
+            
+                this.getListData(Params);
+            },
+
+
+
+            addTasks() {
+                this.showAdd = true;
+            },
+            closeAdd() {
+                this.showAdd = false;
+                //刷新数据
+                let Params = {
+                    "keyword":'',
+                }
+            
+                this.getListData(Params);
+            },
+
+            lookDetail(index,row) { //查看定时任务详情
+                let Params= {"taskId":row.taskId,};
+                this.axios.post(`${TX_API}/findTaskInfo`,Params,{ headers : Headers }).then(res => { 
+                    if(res.data.code == "Success"){
+                        this.dialogVisible = true;
+                        let data = res.data.payload;
+                        data.startTime = getTime(data.startTime).split(' ')[0];
+                        data.endTime   = getTime(data.endTime).split(' ')[0];
+                        data.isCycle   = data.isCycle == '1' ? '循环' : '不循环';
+                        data.taskType  = data.taskType =='1' ? '音频任务':data.taskType =='2' ? '视频任务':data.taskType =='3' ? '文本任务': data.taskType =='4' ? 'FM任务':data.taskType =='5' ? '网络电台任务' : data.taskType =='6' ? '录音任务':'';
+                        this.form = data;
+                        console.log(data)
+                    }else {
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message:'请求出错，请刷新页面！',
+                        type: 'warning'
+                    });
+                });
+            },
+            
+
             handleSelectionChange(val) {
                 this.multipleSelection = val;
             },
-            handleCurrentChange(val) {
 
-            },
-            handleClick(index,row) {
-            
-            },
             deleteTime(index ,row) { //单个资源删除
                 this.$confirm('确认删除该定时任务吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    this.deleteRequst(row.taskId);
                 }).catch(() => {
                     console.log("出错!!")
                 });
@@ -247,53 +469,108 @@
                 this.$confirm('确认删除选中的定时任务吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    let str = '';
+                    for (let i = 0; i < this.multipleSelection.length; i++) {
+                        str += this.multipleSelection[i].taskId +',';
+                    }
+                    this.deleteRequst(str);
                 }).catch(() => {
                     console.log("出错!!")
                 });
             },
-            addTasks() {
-                this.showAdd = true;
-            },
-            closeAdd() {
-                this.showAdd = false;
-            },
-            play(index,row) {
-                this.playMedia = true;
-                let T;
-                T = setTimeout(() => {
-                    var setConfig = {
-                        song : [
-                            // {
-                            //     title : 'china',
-                            //     src : 'http://jq22com.qiniudn.com/jq22m1.mp3',
-                            //     cover : 'images/001.png'
-                            // },
-                            {
-                                title : '如风过境',
-                                src : 'http://jq22.qiniudn.com/2_01.mp3',
-                                cover : 'images/002.png'
-                            },
-                            // {
-                            //     title:'Goldfrapp',
-                            //     src:'http://www.jq22.com/demo/jquery-mis-150323220305/Media/Transformers2.mp3'
-                            // }
-                        ],
-                        error : function(meg){
-                            console.log(meg);
-                            // alert("播放错误！请重新播放")
+            //删除请求 
+            deleteRequst(arr) {
+                let Params = { 'ids':arr}
+                this.axios.post(`${TX_API}/removeTask`,Params,{ headers : Headers }).then(res => {
+                    
+                    if(res.data.code == "Success") {
+                        //刷新数据
+                        let Params = {
+                            "keyword":'',
                         }
-                    };
-                    var audioFn    = audioPlay(setConfig);
-                    if(audioFn){
-                        audioFn.loadFile(1);
+                    
+                        this.getListData(Params);;
+
+                        this.handleCurrentChange(1);
+
+                        this.$message({type:'success',duration:1200,message:'删除成功！'});
+                    }else {
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+                        
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
                     }
-                }, 0);
+                }).catch(err => {
+                    this.$message({
+                        message: '删除失败！',
+                        type: 'warning'
+                    });
+                });
             },
-            closePlay(){ //关闭试听
+            
+            play(index,row) {
+                console.log(row);
+                var _this      = this;
+                let T;
+                if(row.taskType == '音频任务'){
+                    this.playMedia = true;
+                    T = setTimeout(() => {
+                        var setConfig = {
+                            song : [
+                                {
+                                    title : row.mediaName,
+                                    src : row.mediaContent,
+                                    cover : 'images/002.png'
+                                },
+                            ],
+                            error : function(meg){
+                                _this.playMedia = false;
+                                _this.$message({
+                                    message: meg.meg,
+                                    type: 'warning'
+                                });
+                            }
+                        };
+                        var audioFn    = audioPlay(setConfig);
+                        if(audioFn){
+                            audioFn.loadFile(1);
+                        }
+                    }, 0);
+                }
+                if(row.taskType == '网络电台任务'){
+                    this.playInternetRadio = true;
+                    T=setTimeout(() => {
+                        flowplayer("player", "./static/js/flowplayer-3.2.8.swf",{ 
+                            clip: { 
+                                url: 'hks',
+                                provider: 'rtmp',
+                                live: true, 
+                            },  
+                            plugins: {  
+                                rtmp: {  
+                                    url: './static/js/flowplayer.rtmp-3.2.8.swf',  
+                                    netConnectionUrl: 'rtmp://live.hkstv.hk.lxdns.com/live'
+                                } 
+                            } 
+                        });
+                    },0);
+                };
+            },
+            closePlay(){ 
+                //关闭音频试听
                 var audioFn    = audioPlay({});
                 audioFn.loadFile(false);
                 this.playMedia = false;
+            },
+            closePlayInternetRadio() { 
+                //关闭网络电台试听
+
             }
         }
     }
@@ -301,7 +578,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -309,14 +586,15 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
     .add-btn{
         margin-left: 10px;
+        margin-top: 2px;
     }
-    .el-input{
+    .top .el-input{
         width: auto;
         float: right;
         width: 150px;
@@ -330,7 +608,7 @@
     }
     .table{
         width: 100%;
-        height: 516px;
+        height: 80%;
         padding: 5px;
         text-align: center;
     }
@@ -339,7 +617,7 @@
     }
     .bottom{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-top: 1px solid #D3DCE6;
     }
     .bottom .btn{

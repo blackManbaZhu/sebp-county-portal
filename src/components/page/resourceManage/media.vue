@@ -8,21 +8,22 @@
                     <el-input
                         placeholder="请输入名称搜索"
                         prefix-icon="el-icon-search"
-                        v-model="inputSeach">
+                        v-model="inputSeach"
+                        @keyup.enter.native="search()">
                     </el-input>
-                    <el-select v-model="selectValue1" placeholder="音频类型" class="select">
+                    <!-- <el-select v-model="selectValue1" placeholder="音频类型" class="select">
                         <el-option
                         v-for="item in options1"
                         :key="item.value"
                         :label="item.label"
                         :value="item.value">
                         </el-option>
-                    </el-select>
+                    </el-select> -->
                 </div>
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="88%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -32,13 +33,13 @@
                         width="45">
                         </el-table-column>
                         <el-table-column
-                        prop="name"
+                        prop="mediaName"
                         label="名称"
                         header-align="center"
                         >
                         </el-table-column>
                         <el-table-column
-                        prop="creator"
+                        prop="createUser"
                         label="创建人"
                         header-align="center"
                         >
@@ -61,11 +62,13 @@
                     </el-table>
                     <!-- 分页 -->
                     <el-pagination
+                        v-if="pShow"
                         style="margin-top:15px;float:right;"
                         background
                         @current-change="handleCurrentChange"
-                        :page-size="pageInfo.currentPage"
                         layout="total, prev, pager, next, jumper"
+                        :page-size="pageSize"
+                        :current-page="pageInfo.page"
                         :total="pageInfo.total">
                     </el-pagination>
                 </div>
@@ -76,9 +79,9 @@
             </el-main>
         </el-container>
         <!-- 编辑音频弹窗 -->
-        <el-dialog width="80%" title="修改音频名称" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
-            <el-form :model="form" :rules="rules" ref="form">
-                <el-form-item label="文件名称" :label-width="formLabelWidth" prop="name">
+        <el-dialog width="50%" title="修改音频名称" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
+            <el-form :model="form" :rules="rules" ref="form" label-width="80px">
+                <el-form-item label="文件名称" prop="name">
                 <el-input :maxlength="30" v-model="form.name" auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
@@ -133,30 +136,15 @@
 </template>
 
 <script>
-    import { verify } from "../../../api/api.js";
+    import { verify , API , Headers , getTime , trim , allSrim , tokenMessage} from "../../../api/api.js";
     import addMedia from "./Dialog/addMedia.vue";
-    let data = [
-        {
-            name:'雨蝶.mp3',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        },
-        {
-            name:'雨蝶.mp3',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        },
-        {
-            name:'雨蝶.mp3',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        },
-        {
-            name:'雨蝶.mp3',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        }
-    ]
+    // let TransactionID = Transaction();
+    // //获取token 用户信息
+    // let token  = localStorage.getItem('token');
+    // let userId = localStorage.getItem('userId');
+    // let orgId  = localStorage.getItem('orgId');
+    //获取数据
+    let TX_API        = `${API}/CountryResMgmt/media/v1`;
     let options = [
             {
                 value:'全部音频',
@@ -177,42 +165,124 @@
         },
         data() {
             return {
-                dialogFormVisible:false,
-                playMedia:false,
-                formLabelWidth:'80px',
                 options1:options,
-                tableList:data,
+                //列表数据
+                tableList:[],
                 inputSeach:'',
                 selectValue1:'',
                 playAudio:'',
-                showAdd:false,
+                editObj:'',
                 multipleSelection:[],
+                //是否显示分页
+                pShow:false, 
+                //分页信息
+                pageSize:10,
                 pageInfo:{
-                    total:100,
-                    currentPage: 10,
+                    total:0,
+                    page: 1,
                 },
                 form:{
                     name:''
                 },
                 rules:{
                     name:[
-                        { required:true, message:'文件名称必填！',trigger:'blur'}
+                        { required:true, message:'文件名称必填！'}
                     ]
-                }
+                },
+                //弹窗
+                dialogFormVisible:false,
+                playMedia:false,
+                showAdd:false,
             }
         },
+        created() {
+            let Params = {
+                "keyword": '',
+                "mediaType":'1'
+            }
+            this.getListData(Params);
+        },
         methods:{
-            handleSelectionChange(val) {
-                this.multipleSelection = val;
-            },
-            handleCurrentChange(val) {
+            getListData(Params) {
 
+                // let Params= {"keyword":keyword, 'pageNum':pageNum, "pageSize":pageSize,"mediaType":'1'};
+
+                this.axios.post(`${TX_API}/findAllMedia`,Params,{ headers : Headers }).then(res => {
+                    // console.log(res.data);
+                    if(res.data.code == "Success") {
+                        //获取数据
+                        let data = res.data.payload;
+                        this.tableList = data.list.map((value,index) =>{
+                            value.createTime = getTime(value.createTime);
+                            return value;
+                        })
+
+                        //总数
+                        this.pageInfo.total = data.total; 
+
+                        if( this.pageInfo.total > 10) {
+                            this.pShow = true;
+                        }
+                        
+                    }else {
+                        if(res.data.code == 'ParamInvalid') {
+                            this.$message({type: 'error',message:'不能输入带有空格和特殊字符、乱码的关键字'})
+                            return false;
+                        }
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: '请求错误！',
+                        type: 'warning'
+                    });
+                });
             },
-            editMedia(index,row) { //编辑名称
-                this.form.name = row.name;
+            
+            handleCurrentChange(page) {
+                //点击分页
+                let keyword = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var  Params = {
+                    "keyword": keyword,
+                    "pageNum":page,
+                    "mediaType":'1'
+                }
+
+                this.getListData(Params);
+            },
+
+            //搜索
+            search() {
+                this.pageInfo.page = 1;
+
+                let keyWords = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var Params = {
+                    "keyword":keyWords,
+                    "mediaType":'1'
+                }
+            
+                this.getListData(Params);
+            },
+
+            editMedia(index,row) { 
+                //编辑名称
+                this.form.name = row.mediaName;
+                this.editObj   = row;
                 this.dialogFormVisible = true;
             },
-            saveEdit() { //保存编辑
+            saveEdit() { 
+                //保存编辑
                 this.$refs['form'].validate((valid) =>{
                     if(valid){
                         let name = verify.mediaVerify(this.form.name);
@@ -220,18 +290,57 @@
                             this.$message({type:'error',duration:1200,message:'名称格式错误'});
                             return false;
                         }
-                        this.dialogFormVisible = false;
-                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                        let mediaName = trim(this.form.name);
+                        let mediaId   = this.editObj.mediaId;
+
+                        let Params= {"mediaName":mediaName, "mediaId":mediaId};
+
+                        this.axios.post(`${TX_API}/modifyMusicName`,Params,{ headers : Headers }).then(res => {
+                            if(res.data.code == "Success") {
+                                //刷新列表
+                                let Params = {
+                                    "keyword":'',
+                                    "mediaType":'1'
+                                }
+                                this.getListData(Params);
+
+                                this.$message({type:'success',duration:1200,message:'编辑成功!'});
+
+                                //关闭弹窗
+                                this.dialogFormVisible = false;
+                            }else {
+
+                                if(res.data.code == "TokenInvalid"){
+                                    this.$message({type: 'error',message: tokenMessage})
+                                    return false;
+                                }
+
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'warning'
+                                });
+                            }
+                        }).catch(err => {
+                            this.$message({
+                                message: '请求错误！',
+                                type: 'warning'
+                            });
+                        });
                     }else{
                         return false;
                     }
                 })
             },
+
+            handleSelectionChange(val) {
+                //选中列表条数
+                this.multipleSelection = val;
+            },
             deleteMedia(index,row) { //删除单个
                 this.$confirm('确认删除该音频资源吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    this.deleteRequst(row.mediaId);
                 }).catch(() => {
                     console.log("出错!!")
                 });
@@ -244,42 +353,84 @@
                 this.$confirm('确认删除选中的音频资源吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    let str = '';
+                    for (let i = 0; i < this.multipleSelection.length; i++) {
+                        str += this.multipleSelection[i].mediaId +',';
+                    }
+                    this.deleteRequst(str);
                 }).catch(() => {
                     console.log("出错!!")
                 });
 
+            },
+            //删除请求 
+            deleteRequst(arr) {
+                let Params = { 'ids':arr}
+                this.axios.post(`${TX_API}/removeMusic`,Params,{ headers : Headers }).then(res => {
+                    // console.log(res.data);
+                    if(res.data.code == "Success") {
+                        //刷新列表
+                        let Params = {
+                            "keyword":'',
+                            "mediaType":'1'
+                        }
+                        this.getListData(Params);
+
+                        this.pageInfo.page = 1;
+
+                        this.$message({type:'success',duration:1200,message:'删除成功！'});
+                    }else {
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: '删除失败！',
+                        type: 'warning'
+                    });
+                });
             },
             addMedia() {
                 this.showAdd = true;
             },
             closeAdd() {
                 this.showAdd = false;
+                //刷新列表
+                let Params = {
+                    "keyword":'',
+                    "mediaType":'1'
+                }
+                this.getListData(Params);
             },
+
             play(index,row) { //试听
                 this.playMedia = true;
+                var _this = this;
+                console.log(row)
                 let T;
                 T = setTimeout(() => {
                     var setConfig = {
                         song : [
-                            // {
-                            //     title : 'china',
-                            //     src : 'http://jq22com.qiniudn.com/jq22m1.mp3',
-                            //     cover : 'images/001.png'
-                            // },
                             {
-                                title : '如风过境',
-                                src : 'http://jq22.qiniudn.com/2_01.mp3',
+                                title : row.mediaName,
+                                src : row.mediaFilePath,
                                 cover : 'images/002.png'
                             },
-                            // {
-                            //     title:'Goldfrapp',
-                            //     src:'http://www.jq22.com/demo/jquery-mis-150323220305/Media/Transformers2.mp3'
-                            // }
                         ],
                         error : function(meg){
-                            console.log(meg);
-                            // alert("播放错误！请重新播放")
+                            _this.playMedia = false;
+                            _this.$message({
+                                message: meg.meg,
+                                type: 'warning'
+                            });
                         }
                     };
                     var audioFn    = audioPlay(setConfig);
@@ -299,7 +450,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -307,12 +458,13 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
     .add-btn{
         margin-left: 10px;
+        margin-top: 2px;
     }
     .top .el-input{
         width: auto;
@@ -328,7 +480,7 @@
     }
     .table{
         width: 100%;
-        height: 516px;
+        height: 80%;
         padding: 5px;
         text-align: center;
     }
@@ -337,7 +489,7 @@
     }
     .bottom{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-top: 1px solid #D3DCE6;
     }
     .bottom .btn{

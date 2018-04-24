@@ -102,14 +102,14 @@
                                 title: '网络电台',
                                 extent: '00403'
                             },
-                            {
-                                index: 'toVideo',
-                                title: '视频管理',
-                                extent: '00404'
-                            },
+                            // {
+                            //     index: 'toVideo',
+                            //     title: '视频管理',
+                            //     extent: '00404'
+                            // },
                             {
                                 index: 'toFmManage',
-                                title: 'FM频道管理',
+                                title: 'FM频道',
                                 extent: '00405'
                             },
                             {
@@ -117,11 +117,11 @@
                                 title: '文本转语音',
                                 extent: '00406'
                             },
-                            {
-                                index: 'toPlayList',
-                                title: '播放列表',
-                                extent: '00407'
-                            }
+                            // {
+                            //     index: 'toPlayList',
+                            //     title: '播放列表',
+                            //     extent: '00407'
+                            // }
                         ]
                     },
                     {

@@ -23,20 +23,6 @@
                             <p class="tip">用户名支持中英文</p>
 						</div>
 					</el-col>
-                    <!-- <el-col :span="8">
-						<div class="grid-content bg-purple-light">
-							<el-form-item label="登录密码" :label-width="formLabelWidth" prop="password">
-								<el-input v-model="form.password" auto-complete="off"></el-input>
-							</el-form-item>
-						</div>
-					</el-col>
-                    <el-col :span="8">
-						<div class="grid-content bg-purple-light">
-							<el-form-item label="再次输入密码" :label-width="formLabelWidth" prop="agingPass">
-								<el-input v-model="form.agingPass" auto-complete="off"></el-input>
-							</el-form-item>
-						</div>
-					</el-col> -->
                     <el-col :span="10">
 						<div class="grid-content bg-purple-light">
 							<el-form-item label="用户状态" :label-width="formLabelWidth" prop="userStatus">
@@ -49,15 +35,23 @@
 					</el-col>
                     <!-- <p class="tip">用户密码必须包含大写字母、小写字母、数字和特殊字符（必须包含-_@!*中的两个）的组合，长度在6-20之间！</p> -->
                     <el-col :span="10">
-						<div class="grid-content bg-purple">
+						<div class="grid-content bg-purple" style="position:relative;">
 							<el-form-item label="所属机构" :label-width="formLabelWidth" prop="tissue">
-								<el-cascader  v-model="form.tissue"
-								:options="options"
-								:show-all-levels="false"
-								change-on-select
-								></el-cascader>
+                                 <el-input disabled  v-model="form.tissue" auto-complete="off"></el-input>
+                                 <el-button class="checkBtn" type="primary" @click="innerVisible = true">选 择</el-button>
 							</el-form-item>
 						</div>
+                        <el-dialog
+                            width="50%"
+                            title="选择所属机构"
+                            :visible.sync="innerVisible"
+                            append-to-body>
+                             <add-tree></add-tree>
+                            <div class="btn">
+                                <el-button @click="innerVisible = false">取 消</el-button>
+                                <el-button type="primary" @click="innerVisible = false">确认</el-button>
+                            </div>
+                        </el-dialog>
 					</el-col>
                     <el-col :span="10">
 						<div class="grid-content bg-purple-light">
@@ -99,18 +93,11 @@
                         </el-table-column>
                         <el-table-column
                         header-align="center"
-                        label="对应功能模块">
-                            <template slot-scope="scope">
-                                <span class="look" @click="look()">查看对应功能</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column
-                        header-align="center"
                         label="选择"
                         >
                             <template slot-scope="scope">
                                 <!-- <input type="radio" :id="scope.$index" name="aaa"> -->
-                                <el-radio v-model="radio" :label="scope.$index">{{rNull}}</el-radio>
+                                <el-radio @change="checkRole(scope.row)" v-model="radio" :label="scope.$index">{{rNull}}</el-radio>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -119,28 +106,25 @@
                     <el-button type="primary" @click="save">保 存</el-button>
                 </div>
             </div>
-            <el-dialog
-                width="50%"
-                height="40%"
-                title="对应功能模板"
-                :visible.sync="innerVisible"
-                append-to-body>
-                <el-tree :data="treeData" @node-click="handleNodeClick"></el-tree>
-            </el-dialog>
         </el-dialog>
     </div>
 </template>
 
 <script>
-    import { verify }  from "../../../api/api.js";
+    import addTree  from '../../common/treeOne.vue';
+    import { verify,token, userId, orgId ,API}  from "../../../api/api.js";
+    let USER_API = `${API}/CountryUserMgmt/user/v1`;
+    let ORG_API  = `${API}/CountryUserMgmt/org/v1`;
     let list = [
         {
             roleName:'维优管理员',
-            org:'根机构'
+            org:'根机构',
+            roleId:1
         },
         {
             roleName:'辖区管理员',
-            org:'根机构'
+            org:'根机构',
+            roleId:2
         }
     ];
 
@@ -149,6 +133,7 @@
         data() {
             return {
                 radio:'',
+                chexkOrgId:'',
                 //用户信息
                 form:{
                     mobilePhone:'',
@@ -157,7 +142,7 @@
                     password:'',
                     userStatus:'正常',
                     email:'',
-                    tissue:[], //所属机构
+                    tissue:'', //所属机构
                 },
                 tableList:list, 
                 rules: {
@@ -167,66 +152,65 @@
 					userName: [
 						{ required: true, message: '请输入用户名', trigger: 'blur' }
                     ],
-					tissue: [
-						{ required: true, message: '请选择所属机构', trigger: 'change' }
-					],
+					// tissue: [
+					// 	{ required: true, message: '请选择所属机构', trigger: 'change' }
+					// ],
                     userStatus:[
                         { required: true, message: '请选择用户状态', trigger: 'change' }
                     ]
             	},
-				options: [{
-					value: '机构一',
-					label: '机构一',
-					children: [{
-						value: '二级机构',
-						label: '二级机构',
-						children: [{
-							value: '1',
-							label: '1'
-						},{
-							value: '2',
-							label: '2'
-						},{
-							value: '3',
-							label: '3'
-						},{
-							value: '4',
-							label: '4'
-						}]
-					}]
-                }],
-                treeData:[
-                    {
-                        label: '一级 1',
-                        children: [{
-                            label: '二级 1-1',
-                            children: [{
-                            label: '三级 1-1-1'
-                            }]
-                        }]
-                    }
-                ],
                 innerVisible:false,
                 active:0,
                 rNull:"",
+                roleId:1,
                 formLabelWidth:'100px'
             }
         },
         methods:{
+            activeClick(data) {
+                console.log(data);
+            },
             cancel() {
                 this.form ={
                     mobilePhone:'',
                     userName:'',
-                    ukSn:'',
+                    ukSn:null,
                     password:'',
                     userStatus:'正常',
-                    email:'',
-                    tissue:[],
+                    email:null,
+                    tissue:'',
                 };
                 this.$emit("close");
             },
+            checkRole(row){
+                this.roleId = row.roleId;
+            },
+            hanldeOrg(node){ //选择机构
+                this.form.tissue = node.label;
+                this.chexkOrgId  = node.id;
+            },
             save () {
- 
+                let Params= {
+                        "userName":this.form.userName,
+                        "mobilePhone":this.form.mobilePhone,
+                        "orgId":'000000000000000000000000', // 重点
+                        // "orgId":this.chexkOrgId,
+                        "userStaus":this.form.userStatus == '正常' ? '1':'2',
+                        "roleId": this.roleId,
+                        "email":this.form.email ? this.form.email :null,
+                        "ukSn":this.form.ukSn ? this.form.ukSn :null
+                    };
+                this.axios.post(`${USER_API}/saveUser`,Params,{headers:{'X-UserId':userId,'X-User-OrgId': orgId,'X-User-Token': token}}).then(res => {
+                    console.log(res.data);
+                    this.$message({type:'success',duration:1200,message:'添加成功！'});
+                    this.$emit("close");
+                }).catch(err => {
+                    console.log(err)
+                    this.$message({
+                        message: '请求错误！',
+                        type: 'warning'
+                    });
+                });
             },
             next() {
                 this.$refs['form'].validate((valid) =>{
@@ -259,12 +243,6 @@
             },
             back() {
                 this.active = 0;
-            },
-            look() {
-                this.innerVisible = true;
-            },
-            handleNodeClick(value) {
-
             }
         }
     }
@@ -303,7 +281,12 @@
         width: 100%;
         height: 40px;
         margin-top: 20px;
-        float: left;
+        /* float: left; */
+    }
+    .checkBtn{
+        position: absolute;
+        right: -95px;
+        top: 0;
     }
 </style>
 

@@ -129,10 +129,10 @@
                 if(process.env.NODE_ENV === 'development'){
                     self.url = '/ms/table/list';
                     requestTableList({page:self.cur_page}).then( (response) => {
-                        console.log(response);
+                        // console.log(response);
                         self.tableData = response.list;
                     }).catch( (error) => {
-                        console.log(error);
+                        // console.log(error);
                     })
                 };
                 // self.$axios.post(self.url, {page:self.cur_page}).then((res) => {

@@ -3,26 +3,32 @@
         <!-- 用户弹窗 -->
         <el-dialog title="用户详细信息" :visible.sync="detailDialog" :before-close="cancel" :close-on-click-modal="false">
             <div  class="step1">
-                <el-form :model="form">
-                    <el-form-item label="手机号" :label-width="formLabelWidth">
+                <el-form :model="form" label-width="120px">
+                    <el-form-item label="手机号">
 						<el-input :disabled="true"  v-model="form.mobilePhone" auto-complete="off"></el-input>
 					</el-form-item>
-					<el-form-item label="用户名" :label-width="formLabelWidth">
+					<el-form-item label="用户名">
 						<el-input :disabled="true" v-model="form.userName" auto-complete="off"></el-input>
 					</el-form-item>
-                    <el-form-item label="用户状态" :label-width="formLabelWidth">
+                    <el-form-item label="创建人">
+						<el-input :disabled="true" v-model="form.createName" auto-complete="off"></el-input>
+					</el-form-item>
+                    <el-form-item label="创建时间">
+						<el-input :disabled="true" v-model="form.createTime" auto-complete="off"></el-input>
+					</el-form-item>
+                    <el-form-item label="用户状态">
 						<el-input :disabled="true" v-model="form.userStatus" auto-complete="off"></el-input>
 					</el-form-item>
-                    <el-form-item label="所属机构" :label-width="formLabelWidth">
+                    <el-form-item label="所属机构">
 						<el-input :disabled="true" v-model="form.tissue" auto-complete="off"></el-input>
 					</el-form-item>
-                    <el-form-item label="用户角色" :label-width="formLabelWidth">
+                    <el-form-item label="用户角色">
 						<el-input :disabled="true" v-model="form.role" auto-complete="off"></el-input>
 					</el-form-item>
-                    <el-form-item label="uk序列号" :label-width="formLabelWidth">
+                    <el-form-item label="uk序列号">
 						<el-input :disabled="true" v-model="form.ukSn" auto-complete="off"></el-input>
 					</el-form-item>
-                    <el-form-item label="用户邮箱" :label-width="formLabelWidth">
+                    <el-form-item label="用户邮箱">
 						<el-input :disabled="true" v-model="form.email" auto-complete="off"></el-input>
 					</el-form-item>
                 </el-form>
@@ -35,11 +41,13 @@
 </template>
 
 <script>
+    import { verify, API , getTime, tokenMessage , Headers }  from '../../../api/api.js';
+    //用户
+    let USER_API      = `${API}/CountryUserMgmt/user/v1`;
     export default {
         props:['detailDialog'],
         data() {
             return {
-                formLabelWidth:'110px',
                 //用户信息
                 form:{
                     mobilePhone:'',
@@ -48,19 +56,59 @@
                     userStatus:'',
                     role:'',
                     email:'',
-                    tissue:[]
+                    tissue:[],
+                    createUser:'',
+                    createTime:''
                 },
             }
         },
         methods:{
-            cancel() {
-                this.$emit("close");
+            findData(Params) {
+                this.axios.post(`${USER_API}/findByUserId`,Params,{ headers: Headers }).then(res => {
+                    if(res.data.code == "Success") {
+                        let data = res.data.payload;
+                        // console.log(data);
+                        this.form.createName  = data.createName;
+                        this.form.userName    = data.userName;
+                        this.form.mobilePhone = data.mobilePhone;
+                        this.form.ukSn        = data.ukSn;
+                        this.form.userStatus  = data.userStatus==1 ? '有效':'无效';
+                        this.form.role        = data.roleName;
+                        this.form.email       = data.email;
+                        this.form.tissue      = data.orgName;
+                        this.form.createUser  = data.createUser;
+                        this.form.createTime  = getTime(data.createTime);
+                    }else {
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                        this.$emit("close");
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: '请求错误！',
+                        type: 'warning'
+                    });
+                });
             },
             initUserMes(row) {
-                console.log(row)
-                this.form.mobilePhone = row.phone;
-                this.form.userName    = row.username;
-                this.form.userStatus  = row.status;
+
+                let Params= {
+                    "userId":row.userId
+                };
+
+                this.findData(Params)
+            },
+            //关闭弹窗
+            cancel() {
+                this.$emit("close");
             }
         }
     }

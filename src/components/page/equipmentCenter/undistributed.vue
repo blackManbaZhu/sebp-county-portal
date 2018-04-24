@@ -30,7 +30,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="85%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -209,7 +209,7 @@
         /* float: right; */
     }
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -217,7 +217,7 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
@@ -238,7 +238,7 @@
     }
     .table{
         width: 100%;
-        height: 516px;
+        height: 80%;
         padding: 5px;
         text-align: center;
     }
@@ -247,7 +247,7 @@
     }
     .bottom{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-top: 1px solid #D3DCE6;
     }
     .bottom .btn{

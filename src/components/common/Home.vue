@@ -68,7 +68,7 @@
 
 <style>
  .el-container{
-     min-width: 1100px;
+     min-width: 1000px;
  }
 </style>
 

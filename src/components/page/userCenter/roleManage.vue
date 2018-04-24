@@ -13,7 +13,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="500"
+                        height="85%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -107,7 +107,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -115,7 +115,7 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 8%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
@@ -136,7 +136,7 @@
     }
     .table{
         width: 100%;
-        height: 568px;
+        height: 92%;
         padding: 5px;
         text-align: center;
     }

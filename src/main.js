@@ -15,21 +15,41 @@ import "../static/css/audio.css";
 Vue.use(VueAxios, axios)
 Vue.use(ElementUI);
 Vue.use(VueRouter);
+
+//
+axios.interceptors.response.use(response => {
+    // console.log(response)
+    if (response.data.message == '非法token' && response.data.code == "TokenInvalid") {
+        router.push('/login');
+    }
+    return response;
+},
+    error => {
+        
+    })
+
+
 router.beforeEach((to, form, next)=>{
+
     if( to.path == '/login' ){
         localStorage.removeItem('ms_username');
+        localStorage.removeItem('phone');
         localStorage.removeItem('extent');
+        localStorage.removeItem('token');
+        localStorage.removeItem('orgId');
+        localStorage.removeItem('userId');
     }
-    let user   = JSON.parse(localStorage.getItem('ms_username'));
-    let extent = localStorage.getItem('extent');
-    if (!extent && !user && to.path != '/login' ){
+
+    let user = localStorage.getItem('token');
+
+    if (!user && to.path != '/login'){
         next( { path:'/login' } );
     }else {
         next();
     }
+    
 });
 
-Vue.prototype.$axios = axios;
 new Vue({
     router,
     render: h => h(App)

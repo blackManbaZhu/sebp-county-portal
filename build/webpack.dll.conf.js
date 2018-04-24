@@ -17,7 +17,9 @@ module.exports = {
     }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
-        warnings: false
+        warnings: false,
+        drop_debugger: true,
+        drop_console: true  //打包之后去电所有的console.log
       }
     }),
     new webpack.DefinePlugin({

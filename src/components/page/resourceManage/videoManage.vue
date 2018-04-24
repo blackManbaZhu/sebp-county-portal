@@ -13,7 +13,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="88%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -26,13 +26,13 @@
                         prop="name"
                         label="名称"
                         header-align="center"
-                        width="180">
+                        >
                         </el-table-column>
                         <el-table-column
                         prop="creator"
                         label="创建人"
                         header-align="center"
-                        width="180">
+                        >
                         </el-table-column>
                         <el-table-column
                         prop="createTime"
@@ -187,7 +187,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -195,12 +195,13 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
     .add-btn{
         margin-left: 10px;
+        margin-top: 2px;
     }
     .top .el-input{
         width: auto;
@@ -216,7 +217,7 @@
     }
     .table{
         width: 100%;
-        height: 516px;
+        height: 80%;
         padding: 5px;
         text-align: center;
     }
@@ -225,7 +226,7 @@
     }
     .bottom{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-top: 1px solid #D3DCE6;
     }
     .bottom .btn{

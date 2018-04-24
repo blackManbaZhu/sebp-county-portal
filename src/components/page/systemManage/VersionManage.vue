@@ -32,7 +32,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="500"
+                        height="85%"
                         border
                         style="width: 100%;">
                         <el-table-column
@@ -104,7 +104,7 @@
                         :before-upload="beforeUpload"
                         :on-remove="onRemove"
                         :on-exceed="handleExceed"
-                        :limit="1"
+                        :limit="1" 
                     >
                     <el-button size="small" type="primary">选择文件</el-button>
                     </el-upload>
@@ -249,7 +249,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -257,7 +257,7 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
@@ -278,7 +278,7 @@
     }
     .table{
         width: 100%;
-        height: 556px;
+        height: 90%;
         padding: 5px;
         text-align: center;
     }

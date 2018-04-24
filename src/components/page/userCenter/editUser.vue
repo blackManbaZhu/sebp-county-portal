@@ -1,16 +1,9 @@
 <template>
     <div>
-        <!-- 新增用户弹窗 -->
+        <!-- 编辑用户弹窗 -->
         <el-dialog title="编辑用户信息" :visible.sync="eidtDialog" :before-close="cancel" :close-on-click-modal="false">
             <div  class="step1">
                 <el-form :model="form" :rules="rules" ref="form" :label-position="'right'" class="form" :status-icon="true">
-                    <el-col :span="10">
-						<div class="grid-content bg-purple">
-							<el-form-item label="手机号" :label-width="formLabelWidth" prop="mobilePhone">
-								<el-input v-model="form.mobilePhone" auto-complete="off"></el-input>
-							</el-form-item>
-						</div>
-					</el-col>
 					<el-col :span="10">
 						<div class="grid-content bg-purple-light">
 							<el-form-item label="用户名" :label-width="formLabelWidth" prop="userName">
@@ -19,23 +12,10 @@
 						</div>
 					</el-col>
                     <el-col :span="10">
-						<div class="grid-content bg-purple-light">
-							<el-form-item label="用户状态" :label-width="formLabelWidth">
-                                <el-select v-model="form.userStatus" placeholder="用户状态">
-									<el-option label="正常" value="正常"></el-option>
-									<el-option label="停用" value="停用"></el-option>
-								</el-select>
-							</el-form-item>
-						</div>
-					</el-col>
-                    <el-col :span="10">
-						<div class="grid-content bg-purple">
+						<div class="grid-content bg-purple" style="position:relative;">
 							<el-form-item label="所属机构" :label-width="formLabelWidth" prop="tissue">
-								<el-cascader  v-model="form.tissue"
-								:options="options"
-								:show-all-levels="false"
-								change-on-select
-								></el-cascader>
+                                <el-input disabled  v-model="form.tissue" auto-complete="off"></el-input>
+                                <el-button class="checkBtn" type="primary" @click="innerVisible = true">选 择</el-button>
 							</el-form-item>
 						</div>
 					</el-col>
@@ -69,12 +49,24 @@
                     <el-button type="primary" @click="save">保 存</el-button>
                 </div>
             </div>
+            <el-dialog
+                            width="50%"
+                            title="选择所属机构"
+                            :visible.sync="innerVisible"
+                            append-to-body>
+                            <tree></tree>
+                            <div class="btn">
+                                <el-button @click="innerVisible = false">取 消</el-button>
+                                <el-button type="primary" @click="innerVisible = false">确认</el-button>
+                            </div>
+                        </el-dialog>
         </el-dialog>
     </div>
 </template>
 
 <script>
     import { verify }  from "../../../api/api.js";
+    import tree  from '../../common/treeOne.vue';
     export default {
         props:['eidtDialog'],
         data() {
@@ -88,13 +80,9 @@
                     userStatus:'',
                     role:'',
                     email:'',
-                    tissue:[]
+                    tissue:''
                 },
-                obj:{},
                 rules: {
-					mobilePhone: [
-						{ required: true, message: '请输入手机号', trigger: 'blur' }
-					],
 					userName: [
 						{ required: true, message: '请输入用户名', trigger: 'blur' }
                     ],
@@ -105,27 +93,7 @@
 						{ required: true, message: '请选择用户角色', trigger: 'change' }
 					]
             	},
-				options: [{
-					value: '机构一',
-					label: '机构一',
-					children: [{
-						value: '二级机构',
-						label: '二级机构',
-						children: [{
-							value: '三级机构',
-							label: '三级机构'
-						},{
-							value: '三级机构',
-							label: '三级机构'
-						},{
-							value: '三级机构',
-							label: '三级机构'
-						},{
-							value: '三级机构',
-							label: '三级机构'
-						}]
-					}]
-                }]
+                innerVisible:false,
             }
         },
         methods:{
@@ -134,15 +102,16 @@
             },
             save () {
                 this.$refs['form'].validate((valid) =>{
+                    console.log(tree)
                     if(valid){
                         var phone = verify.phoneVerify(this.form.mobilePhone);
                         var uksn  = verify.ukSnVerufy(this.form.ukSn);
                         var email = verify.emailVerify(this.form.email);
                         var name  = verify.userNameVerify(this.form.userName);
-                        if(!phone){
-                            this.$message({type:'error',duration:1200,message:'手机号格式不正确，请重新输入！'});
-                            return false;
-                        }
+                        // if(!phone){
+                        //     this.$message({type:'error',duration:1200,message:'手机号格式不正确，请重新输入！'});
+                        //     return false;
+                        // }
                         if(this.form.ukSn && !uksn){
                             this.$message({type:'error',duration:1200,message:'UK序列号格式不正确，且长度6-20之间！'});
                             return false;
@@ -163,9 +132,9 @@
             },
             initUserMes(row) {
                 console.log(row)
-                this.form.mobilePhone = row.phone;
-                this.form.userName    = row.username;
-                this.form.userStatus  = row.status;
+                // this.form.mobilePhone = row.phone;
+                // this.form.userName    = row.username;
+                // this.form.userStatus  = row.status;
             }
         }
     }
@@ -204,7 +173,11 @@
         width: 100%;
         height: 40px;
         margin-top: 20px;
-        float: left;
+    }
+    .checkBtn{
+        position: absolute;
+        right: -95px;
+        top: 0;
     }
 </style>
 

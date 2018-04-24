@@ -1,7 +1,7 @@
 <template>
     <div>
          <el-container v-show="!showButed && !showMap && !showInfo">
-            <el-aside width="360px" class="left">
+            <el-aside class="left">
                 <div class="tree">
                     <v-tree :datalist="treeList"></v-tree>
                 </div>
@@ -47,7 +47,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="85%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -354,14 +354,14 @@
 }
 
 .left{
-    width: 360px;
-    height: 620px;
+    width: 300px;
+    height: 80vh;
     position: relative;
 }
 .left .tree{
     width: 100%;
     overflow :auto;
-    height: 546px;
+    height: 90%;
 }
 .right{
     position: relative;
@@ -371,7 +371,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 50px;
+    height: 10%;
     border-bottom: 1px solid #D3DCE6;
     padding-top: 5px;
 }
@@ -380,7 +380,7 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 10%;
     border-top: 1px solid #D3DCE6;
     padding-top: 10px;
 }
@@ -401,7 +401,8 @@
     position: absolute;
     width: 99%;
     left: 0.5%;
-    top: 55px;
+    height: 80%;
+    top: 12%;
 }
 .el-aside {
     /* background-color: #D3DCE6; */

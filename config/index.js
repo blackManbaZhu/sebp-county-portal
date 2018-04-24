@@ -4,8 +4,8 @@ var path = require('path')
 module.exports = {
     build: {
         env: require('./prod.env'),
-        index: path.resolve(__dirname, '../sebp-county-portal/index.html'),
-        assetsRoot: path.resolve(__dirname, '../sebp-county-portal'),
+        index: path.resolve(__dirname, '../county/index.html'),
+        assetsRoot: path.resolve(__dirname, '../county'),
         assetsSubDirectory: 'static',
         assetsPublicPath: './',
         productionSourceMap: false,
@@ -30,10 +30,11 @@ module.exports = {
         proxyTable: {
             '/api':{
                 // target:'http://jsonplaceholder.typicode.com',
-                target:'http://192.168.199.230:9000',
+                target:'http://192.168.199.188:9002',
                 changeOrigin:true,
+                secure: false,
                 pathRewrite:{
-                    '/api':''
+                    '^/api': ''
                 }
             },
             '/ms':{

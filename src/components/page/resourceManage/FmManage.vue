@@ -7,13 +7,14 @@
                     <el-input
                         placeholder="请输入名称搜索"
                         prefix-icon="el-icon-search"
-                        v-model="inputSeach">
+                        v-model="inputSeach"
+                        @keyup.enter.native="search()">
                     </el-input>
                 </div>
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="450"
+                        height="88%"
                         border
                         style="width: 100%;"
                         @selection-change="handleSelectionChange">
@@ -23,19 +24,19 @@
                         width="45">
                         </el-table-column>
                         <el-table-column
-                        prop="name"
+                        prop="mediaName"
                         label="FM名称"
                         header-align="center"
                         >
                         </el-table-column>
                         <el-table-column
-                        prop="channel"
+                        prop="mediaContext"
                         label="FM频道"
                         header-align="center"
                         >
                         </el-table-column>
                         <el-table-column
-                        prop="creator"
+                        prop="createUser"
                         label="创建人"
                         header-align="center"
                         >
@@ -58,11 +59,13 @@
                     </el-table>
                     <!-- 分页 -->
                     <el-pagination
+                        v-if="pShow"
                         style="margin-top:15px;float:right;"
                         background
                         @current-change="handleCurrentChange"
-                        :page-size="pageInfo.currentPage"
                         layout="total, prev, pager, next, jumper"
+                        :page-size="pageSize"
+                        :current-page="pageInfo.page"
                         :total="pageInfo.total">
                     </el-pagination>
                 </div>
@@ -73,13 +76,13 @@
             </el-main>
         </el-container>
         <!-- 编辑音频弹窗 -->
-        <el-dialog title="修改FM频道" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
-            <el-form :model="form1" :rules="rules" ref="form1">
-                <el-form-item label="FM名称" :label-width="formLabelWidth" prop="name">
+        <el-dialog title="修改FM频道" :visible.sync="dialogFormVisible" @close="closeDialogEdit" :close-on-click-modal="false">
+            <el-form :model="form1" :rules="rules" ref="form1" label-width="80px">
+                <el-form-item label="FM名称" prop="name">
                  <el-input :maxlength="30" v-model="form1.name" auto-complete="off" placeholder="请输入名称"></el-input>
                 </el-form-item>
-                <el-form-item label="FM频道" :label-width="formLabelWidth" prop="channel">
-                 <el-input v-model="form1.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
+                <el-form-item label="FM频道" prop="channel">
+                 <el-input :minlength="3" :maxlength="30" v-model="form1.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -88,13 +91,13 @@
             </div>
         </el-dialog>
         <!-- 新增音频弹窗 -->
-        <el-dialog title="新增FM频道" :visible.sync="addFm" :close-on-click-modal="false">
-            <el-form :model="form2" :rules="rules" ref="form2">
-                <el-form-item label="FM名称" :label-width="formLabelWidth" prop="name">
+        <el-dialog title="新增FM频道" :visible.sync="addFm" @close="closeDialogAdd" :close-on-click-modal="false">
+            <el-form :model="form2" :rules="rules" ref="form2" label-width="80px">
+                <el-form-item label="FM名称" prop="name">
                  <el-input :maxlength="30" v-model="form2.name" auto-complete="off" placeholder="请输入名称"></el-input>
                 </el-form-item>
-                <el-form-item label="FM频道" :label-width="formLabelWidth" prop="channel">
-                 <el-input v-model="form2.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
+                <el-form-item label="FM频道" prop="channel">
+                 <el-input :minlength="3" :maxlength="30" v-model="form2.channel" auto-complete="off" placeholder="76.0~108.0"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -107,114 +110,279 @@
 
 <script>
     import addVideo from "./Dialog/addVideo.vue";
-    import { verify } from "../../../api/api.js";
-    let data = [
-        {
-            name:'123',
-            channel:'76.0',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        },
-        {
-            name:'456',
-            channel:'76.1',
-            creator:'xx-xx',
-            createTime:'2018-04-12 12:10:56'
-        }
-    ];
+    import { verify, API, Headers ,  getTime ,trim ,allSrim ,tokenMessage} from "../../../api/api.js";
+    //获取数据
+    let FM_API = `${API}/CountryResMgmt/media/v1`;
     export default {
         components:{
             addVideo
         },
         data() {
             return {
-                addFm:false,
-                dialogFormVisible:false,
-                formLabelWidth:'80px',
-                tableList:data,
-                inputSeach:'',
-                selectValue1:'',
-                showAdd:false,
-                multipleSelection:[],
-                pageInfo:{
-                    total:100,
-                    currentPage: 10,
+                tableList:[], //列表数据
+                inputSeach:'', //搜索关键字
+                multipleSelection:[], //选中的数据
+                editObj:'', //编辑数据
+                //当前页面显示多少条
+                pageSize:10, 
+                //是否显示分页
+                pShow:false,
+                pageInfo:{ //分页
+                    total:1,
+                    page: 1,
                 },
-                form1:{
+                form1:{ //编辑表单
                     name:'',
                     channel:''
                 },
-                form2:{
+                form2:{  //新增表单
                     name:'',
                     channel:''
                 },
-                rules:{
+                //校验
+                rules:{ 
                     channel:[
-                        { required:true, message:'FM频道必填！',trigger:'blur'}
+                        { required:true, message:'FM频道必填！'}
                     ],
                     name:[
-                        { required:true, message:'FM名称必填！',trigger:'blur'}
+                        { required:true, message:'FM名称必填！'}
                     ]
-                }
+                },
+                //添加弹窗
+                addFm:false,
+                //编辑弹窗
+                dialogFormVisible:false,
             }
         },
+        created() {
+            let Params = {
+                "keyword": '',
+                "mediaType":'4'
+            }
+            this.getListData(Params);
+        },
         methods:{
-            handleSelectionChange(val) {
-                this.multipleSelection = val;
-                console.log(val)
-            },
-            handleCurrentChange(val) {
+            //获取数据列表
+            getListData(Params) {
 
+                // let Params= {"keyword":keyword, 'pageNum':pageNum, "pageSize":pageSize,"mediaType":'4'};
+
+                this.axios.post(`${FM_API}/findAllMedia`,Params,{ headers : Headers }).then(res => {
+                    // console.log(res.data);
+                    if(res.data.code == "Success") {
+                        //返回数据
+                        let data = res.data.payload;
+                        this.tableList = data.list.map((value,index) =>{
+                            value.createTime = getTime(value.createTime);
+                            return value;
+                        });
+
+                        //总条数
+                        this.pageInfo.total = data.total; 
+                        
+                        if(this.pageInfo.total > 10) {
+                            this.pShow = true;
+                        }
+
+                    }else {
+
+                        if(res.data.code == 'ParamInvalid') {
+                            this.$message({type: 'error',message:'不能输入带有空格和特殊字符、乱码的关键字'})
+                            return false;
+                        }
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    
+                    this.$message({
+                        message: '请求错误！',
+                        type: 'warning'
+                    });
+                });
             },
-            editMedia(index,row) { //编辑
-                this.form1.channel = row.channel;
-                this.form1.name    = row.name;
+            
+            handleCurrentChange(page) {
+                //点击分页
+                let keyword = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var  Params = {
+                    "keyword": keyword,
+                    "pageNum":page,
+                    "mediaType":'4'
+                }
+
+                this.getListData(Params);
+            },
+
+            //搜索
+            search() {
+                this.pageInfo.page = 1;
+
+                let keyWords = this.inputSeach ? allSrim(this.inputSeach) : '';
+
+                var Params = {
+                    "keyword":keyWords,
+                    "mediaType":'5'
+                }
+            
+                this.getListData(Params);
+            },
+
+            editMedia(index,row) { 
+                //编辑
+                this.form1.channel = row.mediaContext;
+                this.form1.name    = row.mediaName;
+                this.editObj       = row;
                 this.dialogFormVisible = true;
             },
-            saveEdit() { //保存编辑
+            saveEdit() { 
+                //保存编辑
                 this.$refs['form1'].validate((valid) =>{
                     if(valid){
                         var name = this.FMnameVerify(this.form1.name);
                         var fm   = this.FMverify(this.form1.channel);
+                        var num  = this.form1.channel;
                         if(!name){
                             return name;
                         }
                         if(!fm){
                             return fm;
                         }
-                        this.dialogFormVisible = false;
-                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                        if(parseInt(num, 10) === num){
+                            num = num + '.0'
+                        }
+                        let mediaName    = trim(this.form1.name);
+                        let mediaContext = trim(num);
+                        let mediaId      = this.editObj.mediaId;
+
+
+                        let Params= {"mediaName": mediaName,"mediaContext":mediaContext, "mediaId": mediaId};
+
+                        this.axios.post(`${FM_API}/modifyFM`,Params,{ headers : Headers }).then(res => {
+                            // console.log(res.data);
+                            if(res.data.code == "Success") {
+                                //刷新列表数据
+                                let Params = {
+                                    "keyword": '',
+                                    "mediaType":'4'
+                                };
+                                this.getListData(Params);
+                                //关闭弹窗
+                                this.dialogFormVisible = false;
+
+                                this.$message({type:'success',duration:1200,message:'编辑成功!'});
+                            }else {
+
+                                if(res.data.code == "TokenInvalid"){
+                                    this.$message({type: 'error',message: tokenMessage})
+                                    return false;
+                                }
+
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'warning'
+                                });
+                            }
+                        }).catch(err => {
+                            this.$message({
+                                message: '请求错误！',
+                                type: 'warning'
+                            });
+                        });
                     }else{
                         return false;
                     }
                 })
             },
-            addMedia() {  //新增
+            addMedia() {  
+                //新增
                 this.addFm = true;
             },
-            saveAdd() { //保存新增
+            saveAdd() { 
+                //保存新增
                 this.$refs['form2'].validate((valid) =>{
                     if(valid){
                         var name = this.FMnameVerify(this.form2.name);
                         var fm   = this.FMverify(this.form2.channel);
+                        var num  = Number(this.form2.channel);
                         if(!name){
                             return name;
                         }
                         if(!fm){
                             return fm;
                         }
-                        this.addFm = false;
-                        this.$message({type:'success',duration:1200,message:'保存成功!'});
+                        if(num%1 === 0){
+                            num+='.0'
+                        }
+                        console.log(num)
+                        let mediaName    = trim(this.form2.name);
+                        let mediaContext = trim(num);
+
+                        
+                        let Params= {
+                            "mediaName":mediaName,
+                            "mediaContext":mediaContext
+                        };
+
+                        this.axios.post(`${FM_API}/saveFM`,Params,{ headers : Headers }).then(res => {
+                            // console.log(res.data);
+                            if(res.data.code == "Success"){
+                                //刷新列表数据
+                                let Params = {
+                                    "keyword": '',
+                                    "mediaType":'4'
+                                };
+                                this.getListData(Params);
+
+                                //关闭弹窗
+                                this.addFm = false;
+                                //清除输入框
+                                this.form2.name = this.form2.channel = '';
+                                
+                                this.$message({type:'success',duration:1200,message:'保存成功!'});
+                            }else{
+
+                                if(res.data.code == "TokenInvalid"){
+                                    this.$message({type: 'error',message: tokenMessage})
+                                    return false;
+                                }
+                                
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'warning'
+                                });
+                            }
+                        }).catch(err => {
+                            this.$message({
+                                message: '请求错误！',
+                                type: 'warning'
+                            });
+                        });
                     }else{
                         return false;
                     }
                 })
             },
+
+            handleSelectionChange(val) {
+                //多选 选中列表
+                this.multipleSelection = val;
+            },
+
             deleteMedia(index,row) { //删除单个
                 this.$confirm('确认删除该FM资源吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    this.deleteRequst(row.mediaId);
                 }).catch(() => {
                     console.log("出错!!")
                 });
@@ -227,12 +395,71 @@
                 this.$confirm('确认删除选中的FM资源吗?', '提示', {
 					type: 'warning'
                 }).then(() => {
-
+                    let str = '';
+                    for (let i = 0; i < this.multipleSelection.length; i++) {
+                        str += this.multipleSelection[i].mediaId +',';
+                    }
+                    this.deleteRequst(str);
                 }).catch(() => {
                     console.log("出错!!")
                 });
 
             },
+            //删除请求 
+            deleteRequst(arr) {
+                let Params = { 'ids':arr}
+                this.axios.post(`${FM_API}/removeFM`,Params,{ headers : Headers }).then(res => {
+                    // console.log(res.data);
+                    if(res.data.code == "Success") {
+                        //刷新列表数据
+                        let Params = {
+                            "keyword": '',
+                            "mediaType":'4'
+                        };
+                        this.getListData(Params);
+                        this.pageInfo.page = 1;
+                        this.$message({type:'success',duration:1200,message:'删除成功！'});
+                    }else {
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: '删除失败！',
+                        type: 'warning'
+                    });
+                });
+            },
+
+            //关闭弹窗清除数据
+            closeDialogEdit() {
+                this.form1 = { //编辑表单
+                    name:'',
+                    channel:''
+                };
+               
+                //关闭表单验证
+                this.$refs['form1'].resetFields();
+				
+            },
+            closeDialogAdd() {
+                
+                this.form2 = {  //新增表单
+                    name:'',
+                    channel:''
+                };
+
+                this.$refs['form2'].resetFields();
+            },
+            
             FMnameVerify(value) {  //校验名称
                 let flag = true;
                 let name = verify.mediaVerify(value);
@@ -246,7 +473,10 @@
             FMverify(value){  //校验频道取值
                 let flag   = true;
                 let number = Number(value);
-                let fm     = verify.FMverify(number);
+                if(number%1 === 0){
+                    number+='.0'
+                }
+                let fm  = verify.FMverify(number);
                 if(!fm || number < 76.0 || number > 108.0){
                     this.$message({type:'error',message:'FM频道格式不正确,且范围在76.0~108.0之间！'});
                     flag = false;
@@ -260,7 +490,7 @@
 
 <style scoped>
     .el-main {
-        height: 620px;
+        height: 80vh;
         color: #333;
         padding: 0;
         overflow: none;
@@ -268,12 +498,13 @@
     }
     .top{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
     .add-btn{
         margin-left: 10px;
+        margin-top: 2px;
     }
     .top .el-input{
         width: auto;
@@ -289,7 +520,7 @@
     }
     .table{
         width: 100%;
-        height: 516px;
+        height: 80%;
         padding: 5px;
         text-align: center;
     }
@@ -298,7 +529,7 @@
     }
     .bottom{
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-top: 1px solid #D3DCE6;
     }
     .bottom .btn{

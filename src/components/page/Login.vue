@@ -4,7 +4,7 @@
         <h2 class="title">智能应急广播平台</h2>
         <el-tabs>
             <el-tab-pane label="普通登录">
-                <el-form :model="ruleForm1" status-icon :rules="rules1" ref="ruleForm1">
+                <el-form :model="ruleForm1" :rules="rules1" ref="ruleForm1" @keyup.enter.native="submitForm('ruleForm1')">
                     <el-form-item prop="account">
                         <el-input type="text" v-model="ruleForm1.account" auto-complete="off" placeholder="请输入账号"></el-input>
                     </el-form-item>
@@ -13,8 +13,8 @@
                     </el-form-item>
                     <el-form-item prop="authCode">
                         <el-input type="text" v-model="ruleForm1.authCode" auto-complete="off" placeholder="验证码" style="width:50%;display: inline-block;"></el-input>
-                        <span class="authCodePic"><img :src="authCodeUrl" alt="验证码" /></span>
-                        <!-- <span class="another">换一张</span> -->
+                        <span class="authCodePic"><img :src="authCodeUrl"/></span>
+                        <span class="another" @click="another">换一张</span>
                     </el-form-item>
                     <el-form-item>
                         <el-checkbox type="checked" v-model="checked" @change="rememberMe()">记住我</el-checkbox>
@@ -26,7 +26,7 @@
                 </el-form>  
             </el-tab-pane>
             <el-tab-pane label="Ukey登录">
-                <el-form :model="ruleForm2" status-icon :rules="rules2" ref="ruleForm2">
+                <el-form :model="ruleForm2" :rules="rules2" ref="ruleForm2">
                     <el-form-item prop="account">
                         <el-input type="text" v-model="ruleForm2.account" auto-complete="off" placeholder="请输入账号"></el-input>
                     </el-form-item>
@@ -35,7 +35,7 @@
                     </el-form-item>
                     <el-form-item prop="authCode">
                         <el-input type="text" v-model="ruleForm2.authCode" auto-complete="off" placeholder="验证码" style="width:50%;display: inline-block;"></el-input>
-                        <span class="authCodePic"><img :src="authCodeUrl" alt="验证码" /></span>
+                        <span class="authCodePic" ><img :src="authCodeUrl"/></span>
                     </el-form-item>
                     <el-form-item>
                         <el-checkbox type="checked" v-model="checked" @change="rememberMe()">记住我</el-checkbox>
@@ -47,22 +47,46 @@
                 </el-form>  
             </el-tab-pane>
         </el-tabs>
-                         
     </el-form>
+    <el-dialog title="请设置您的密码" :visible.sync="editdialog" :close-on-click-modal="false">
+            <el-form :model="form" :rules="rules" ref="form">
+                <el-form-item label="旧密码" :label-width="formLabelWidth" prop="beforePassword">
+                 <el-input type="password" v-model="form.beforePassword" auto-complete="off" placeholder="请输入旧密码"></el-input>
+                </el-form-item>
+                <el-form-item label="新密码" :label-width="formLabelWidth" prop="newPassword">
+                 <el-input type="password" v-model="form.newPassword" auto-complete="off" placeholder="请输入新密码"></el-input>
+                </el-form-item>
+                <el-form-item label="确认密码" :label-width="formLabelWidth" prop="affirmPassword">
+                 <el-input type="password" v-model="form.affirmPassword" auto-complete="off" placeholder="请确认新密码"></el-input>
+                </el-form-item>
+                <p class="tip">用户密码必须包含大写字母、小写字母、数字和特殊字符（必须包含-_@!*中的两个或两个以上）的组合，长度在6-20之间！</p>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="editdialog = false">取 消</el-button>
+                <el-button type="primary" @click="saveAdd()">保 存</el-button>
+            </div>
+    </el-dialog>
   </div> 
 </template>
 <script>
-    import {API, Transaction, XClientIP } from '../../api/api';
+    import {API, verify, Transaction, XClientIP ,trim ,tokenMessage} from '../../api/api';
+    //获取本地IP
     let TransactionID = Transaction();
-    let CODE_API = `${API}/UserMgmt/authCode/v1`;
-    let LOGIN_API =  `${API}/UserMgmt/admin/v1`;
+    //验证码
+    let CODE_API = `${API}/CountryUserMgmt/user/v1`;
+    //登录
+    let LOGIN_API =  `${API}/CountryUserMgmt/user/v1`;
     export default {
         data() {
             return {
                 checked :false,
                 logining:false,
-                authCodeUrl:'',
+                editdialog:false,
+                formLabelWidth:'100px',
+                authCodeUrl: '',
+                token:'',
                 account:'',
+                picId:'',
                 ruleForm1: {
                     account:'',
                     checkPass: '',
@@ -72,6 +96,11 @@
                     account:'',
                     ukeyPass:'',
                     authCode:''
+                },
+                form:{
+                    beforePassword:'',
+                    newPassword:'',
+                    affirmPassword:''
                 },
                 rules1: {
                     account: [
@@ -94,6 +123,17 @@
                     authCode: [
                         { required: true, message: '请输入验证码', trigger: 'blur'}
                     ]
+                },
+                rules:{
+                    beforePassword:[
+                        { required:true, message:'请输入旧密码',trigger:'blur'}
+                    ],
+                    newPassword:[
+                        { required:true, message:'请输入新密码',trigger:'blur'}
+                    ],
+                    affirmPassword:[
+                        { required:true, message:'请确认新密码',trigger:'blur'}
+                    ],
                 }
             };
         },
@@ -108,84 +148,100 @@
                 this.ruleForm1.account   = this.ruleForm1.ukeyPass  = '';
                 this.ruleForm2.account   = this.ruleForm2.checkPass = '';
             }
+            this.another();
         },
         methods: {
-            submitForm(formName) {
+            another() {  //获取验证码
+                this.axios.get(`${CODE_API}/verifyCode`,{headers:{'X-Transaction':TransactionID}}).then(res => {
+                    if(res.data.code == "Success"){
+                        this.picId       = res.data.payload.id;
+                        this.authCodeUrl = `data:image/jpeg;base64,${res.data.payload.imageBase64}`; 
+                    }else{
+
+                        if(res.data.code == "TokenInvalid"){
+                            this.$message({type: 'error',message: tokenMessage})
+                            return false;
+                        }
+
+                        
+                        this.$message({
+                            message: res.data.message,
+                            type: 'warning'
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message: err.message,
+                        type: 'warning'
+                    });
+                });
+            },
+            submitForm(formName) { //登录
                 this.$refs[formName].validate((valid) => {
                 if (valid) {
                     this.logining = true;
-                    let Params= {"account":"sa-betel","password":"Betelinfo8888"};
-                    // this.axios.post(`${LOGIN_API}/login`,Params,{headers:{'TransactionID':TransactionID,'XClientIP': XClientIP}}).then(res => {
-                    //         //登录成功
-                    //          console.log(res.data)
-                    //         // console.log(res.data.data.privileges.privilegeId)
-                    //     if(res.data.code == '00000000'){
-                    //             alert("登陆成功");
-                    //     }else {
-                        
-                    //         if(res.data.code == '00100201') {
-                    //         //登录失败
-                    //             this.$message({
-                    //                 message: '账号或密码错误！',
-                    //                 type: 'warning'
-                    //             });
-                    //             this.logining = false;
-                    //         }
-                    //         if(res.data.code == '00100204') {
-                    //         //登录失败
-                    //             this.$message({
-                    //                 message: '管理员账号停用！',
-                    //                 type: 'warning'
-                    //             });
-                    //             this.logining = false;
-                    //         }
-                    //         if(res.data.code == '00100205') {
-                    //         //登录失败
-                    //             this.$message({
-                    //                 message: '管理员账号冻结！',
-                    //                 type: 'warning'
-                    //             });
-                    //             this.logining = false;
-                    //         }
-                    //         if(res.data.code == '33333333') {
-                    //         //登录失败
-                    //             this.$message({
-                    //                 message: '参数不合法！',
-                    //                 type: 'warning'
-                    //             });
-                    //             this.logining = false;
-                    //         }
-                    //         if(res.data.code == '99999999') {
-                    //         //登录失败
-                    //             this.$message({
-                    //                 message: '系统异常！',
-                    //                 type: 'warning'
-                    //             });
-                    //             this.logining = false;
-                    //         }
-                    //         this.$message({
-                    //             message: '操作异常，请重新刷新操作！',
-                    //             type: 'warning'
-                    //             });
-                    //         this.logining = false;
-                    // }
-                    // }).catch(err => {
-                    //     console.log(err)
-                    //     this.$message({
-                    //         message: '登录失败，请确认账户密码是否正确！',
-                    //         type: 'warning'
-                    //     });
-                    //         this.logining = false;
-                    // })
+                    let Params= {
+                        "mobilePhone":trim(this.ruleForm1.account),
+                        "password":this.ruleForm1.checkPass,
+                        "verifyCode":this.ruleForm1.authCode,
+                        "verifyCodeId":this.picId
+                    };
+                    this.axios.post(`${LOGIN_API}/login`,Params,{headers:{'TransactionID':TransactionID,'XClientIP': XClientIP}}).then(res => {
+                        // console.log(res.data)
+                        if(res.data.code == 'Success'){  //登录成功
+                            let setPWDNeeded     = res.data.payload.setPWDNeeded; //是否第一次登录
+                            let refreshPWDNeeded = res.data.payload.refreshPWDNeeded; //是否长时间没有设置密码
+                            let userData = res.data.payload.user; //用户基本信息
+                            
+                            //存放用户信息
+                            this.token   = res.data.payload.token;
+                            localStorage.setItem('ms_username',userData.userName);
+                            localStorage.setItem('phone',userData.mobilePhone);
+                            localStorage.setItem('userId',userData.userId);
+                            localStorage.setItem('orgId',userData.orgId);
 
-                    let user = this.ruleForm1.account;
-                    localStorage.setItem('ms_username',JSON.stringify(user));
-                    //权限信息
-                    let extent = [
-                        '00100','00300','00301','00302','00400','00401','00402',
-                        '00403','00404','00405','00406','00407','00700','00706']
-                    localStorage.setItem('extent',extent);
-                    this.$router.push({ path:'/home' });
+                            localStorage.setItem('token',res.data.payload.token);
+                            if(setPWDNeeded || refreshPWDNeeded){ //第一次登录需要重置密码
+                                this.editdialog = true;
+                                this.logining   = false;
+                                return false;
+                            }else{
+                                //权限信息
+                                let extent = [
+                                    '00100','00300','00301','00302','00400','00401','00402',
+                                    '00403','00404','00405','00406','00407','00700','00706']
+                                localStorage.setItem('extent',extent);
+                                setTimeout(() => {
+                                    this.$router.push({ path:'/home' }); 
+                                },100);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                },180);
+                                this.logining = false;
+                                this.$message.success("登录成功");
+                            }
+                        }else{
+
+                            if(res.data.code == "TokenInvalid"){
+                                this.$message({type: 'error',message: tokenMessage})
+                                return false;
+                            }
+
+                            this.$message({
+                                message: res.data.message,
+                                type: 'warning'
+                            });
+                            this.another(); //刷新验证码
+                            this.logining           = false;
+                            this.ruleForm1.authCode = '';
+                        }
+                    }).catch(err => {
+                        this.$message({
+                            message: err.message,
+                            type: 'warning'
+                        });
+                        this.logining = false;
+                    });
                 } else {
                     console.log('error submit!!');
                     return false;
@@ -195,15 +251,79 @@
             rememberMe (val) {
                 let userInfo  = {
                         'account' :this.ruleForm1.account || this.ruleForm2.account,
-                        'checkPass': this.ruleForm1.checkPass
                     }
                 if(this.checked){
+
                     localStorage.setItem('userInfo',JSON.stringify(userInfo));
-                    console.log('remember me !')
+
                 }else {
-                    console.log('no!')
+
                     localStorage.removeItem('userInfo');
+
                 }
+            },
+            saveAdd() { //保存重置密码
+                this.$refs['form'].validate((valid) =>{
+                    if(valid){
+                        let userToken      = this.token;
+                        let newPassword    = this.form.newPassword;
+                        let beforePassword = this.form.beforePassword;
+                        let affirmPassword = this.form.affirmPassword;
+                        let password = verify.passwordVerify(this.form.newPassword);
+
+                        if(!password){
+
+                            this.$message({type:'error',duration:1200,message:'密码格式错误，且长度在6-20之间，请重新输入！'});
+                            return false;
+                        }
+                        if(affirmPassword != newPassword){
+                            this.$message({type:'error',duration:1200,message:'两次密码不相同!'});
+                            return false;
+                        }
+                        if( newPassword == beforePassword ){
+                            this.$message({type:'error',duration:1200,message:'新旧密码不能相同!'});
+                            return false;
+                        }
+                        var Params = {"oldPassword": beforePassword,"newPassword": newPassword}
+                        this.axios.post(`${LOGIN_API}/changePassword`,Params,{headers:{'X-Transaction':TransactionID,'X-User-Token': userToken}}).then(res => {
+                            // console.log(res.data)
+                            if(res.data.code == 'Success'){
+
+                                this.$message({type:'success',duration:1200,message:'修改成功!'});
+                                
+                                //清除第一次登录的token
+                                localStorage.removeItem('token');
+                                //跳转登录界面
+                                this.$router.push('/login');
+                                this.editdialog          =  false;
+                                this.ruleForm1.checkPass = '';
+                            }else {
+
+                                if(res.data.code == "ParamInvalid"){
+                                    this.$message({type:'error',duration:1200,message:'密码格式错误，请重新输入！'});
+                                    return false;
+                                }
+
+                                if(res.data.code == "TokenInvalid"){
+                                    this.$message({type: 'error',message: tokenMessage})
+                                    return false;
+                                }
+
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'warning'
+                                });
+                            }
+                        }).catch(err => {
+                            this.$message({
+                                message: err.message,
+                                type: 'warning'
+                            });
+                        });
+                    }else{
+                        return false;
+                    }
+                })
             }
         }
     }
@@ -256,14 +376,15 @@
         color: #3276b1;
     }
     .authCodePic img{
-      width: 60px;
+      width: 50px;
       height: 30px;
       vertical-align: middle;
       margin-top: -9px;
       margin-left: 25px;
     }
-    .another {
+    .another{
       color: #20A0FF;
+      font-size: 12px;
       margin-left: 30px;
       cursor: pointer;
     }

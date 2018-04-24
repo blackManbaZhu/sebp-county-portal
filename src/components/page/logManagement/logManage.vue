@@ -1,7 +1,7 @@
 <template>
     <div>
          <el-container>
-            <el-aside width="360px" class="left">
+            <el-aside class="left">
                 <div class="tree">
                     <v-tree :datalist="treeList"></v-tree>
                 </div>
@@ -44,7 +44,7 @@
                 <div class="table">
                     <el-table
                         :data="tableList"
-                        height="500"
+                        height="85%"
                         border
                         style="width: 100%;"
                         >
@@ -229,29 +229,31 @@
         float: right;
     }
     .left{
-        width: 360px;
-        height: 620px;
+        width: 300px;
+        height: 80vh;
         position: relative;
     }
     .left .tree{
         width: 100%;
         overflow :auto;
-        height: 100vh;
+        height: 90%;
     }
     .right{
         position: relative;
+        height: 80vh;
     }
     .right .top{
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
-        height: 50px;
+        height: 10%;
         border-bottom: 1px solid #D3DCE6;
         padding-top: 5px;
     }
     .right .table{
         text-align: center;
+        height: 90%;
     }
     .selectSpan{
         float: left;
@@ -266,7 +268,7 @@
         position: absolute;
         width: 99%;
         left: 0.5%;
-        top: 55px;
+        top: 12%;
     }
     .el-aside {
         overflow: none;
